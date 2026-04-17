@@ -11,13 +11,13 @@ export default function LoadingScout() {
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                 className="relative flex items-center justify-center"
             >
-                <Compass className="w-16 h-16 text-forest-600" strokeWidth={1.5} />
+                <Compass className="w-16 h-16 text-scout-600" strokeWidth={1.5} />
             </motion.div>
             <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
-                className="text-forest-800 font-display font-medium tracking-wide"
+                className="text-scout-800 font-display font-medium tracking-wide"
             >
                 EXPLORANDO DADOS...
             </motion.p>

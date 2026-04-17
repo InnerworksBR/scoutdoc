@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // base64 de 50MB ~= 68MB — limite generoso para cobrir a codificação
+    serverBodySizeLimit: "70mb",
+  },
 };
 
 export default nextConfig;

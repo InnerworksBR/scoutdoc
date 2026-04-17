@@ -20,20 +20,15 @@ export default function NewPUDPage() {
         try {
             const response = await fetch("/api/generate", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
 
-            if (!response.ok) {
-                throw new Error("Falha na geração");
-            }
+            if (!response.ok) throw new Error("Falha na geração");
 
             const generatedData = await response.json();
             setRawData(generatedData);
 
-            // Create a preview string (Temporary simple view)
             const formattedPreview = `
 # ${generatedData.title}
 
@@ -60,12 +55,11 @@ ${generatedData.daily_checklist?.map((c: any) => `- [${c.checked ? "x" : " "}] $
 
 ## Comentários
 ${generatedData.comments?.map((c: string) => `- ${c}`).join("\n") || "N/A"}
-             `.trim();
+            `.trim();
 
             setGeneratedContent(formattedPreview);
             setIsGenerating(false);
             setShowPreview(true);
-
         } catch (error) {
             console.error("Erro:", error);
             setIsGenerating(false);
@@ -75,23 +69,22 @@ ${generatedData.comments?.map((c: string) => `- ${c}`).join("\n") || "N/A"}
 
     if (isGenerating) {
         return (
-            <div className="min-h-screen bg-sand-50 flex flex-col items-center justify-center">
+            <div className="min-h-screen bg-cream-50 flex flex-col items-center justify-center">
                 <LoadingScout />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-sand-50 font-body flex flex-col">
-            {/* Minimal Nav for Generator */}
-            <header className="border-b border-sand-200 bg-white sticky top-0 z-30">
+        <div className="min-h-screen bg-cream-50 font-body flex flex-col">
+            <header className="border-b border-cream-200 bg-white sticky top-0 z-30">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    <div className="flex items-center space-x-2 text-forest-700">
+                    <div className="flex items-center space-x-2 text-scout-700">
                         <Compass className="w-6 h-6" strokeWidth={2} />
                         <span className="font-display font-bold text-lg hidden sm:inline">Gerador de PUD</span>
                     </div>
                     <Link href="/dashboard">
-                        <Button variant="ghost" size="sm" className="text-forest-500 hover:text-forest-800">
+                        <Button variant="ghost" size="sm" className="text-scout-500 hover:text-scout-800">
                             <X className="w-4 h-4 mr-2" /> Cancelar
                         </Button>
                     </Link>
@@ -100,16 +93,15 @@ ${generatedData.comments?.map((c: string) => `- ${c}`).join("\n") || "N/A"}
 
             <main className="container mx-auto px-4 py-8 flex-1 flex flex-col items-center justify-center">
                 <div className="text-center mb-8 space-y-2">
-                    <h1 className="text-2xl md:text-3xl font-display font-bold text-forest-900">
+                    <h1 className="text-2xl md:text-3xl font-display font-bold text-scout-900">
                         Vamos criar seu plano
                     </h1>
-                    <p className="text-forest-600">
+                    <p className="text-scout-600">
                         Preencha os dados abaixo e deixe a IA estruturar o conteúdo técnico.
                     </p>
                 </div>
 
                 <StepForm onComplete={handleFormComplete} />
-
             </main>
 
             <PreviewModal

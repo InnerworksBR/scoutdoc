@@ -37,7 +37,6 @@ const step4Schema = z.object({
     observacoes: z.string().optional(),
 });
 
-// Combined Schema for type inference
 const formSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema);
 
 type FormData = z.infer<typeof formSchema>;
@@ -107,15 +106,16 @@ export default function StepForm({ onComplete }: StepFormProps) {
         }),
     };
 
+    const selectClass = "w-full h-10 px-3 py-2 rounded-md border border-cream-300 bg-cream-50 text-sm focus:outline-none focus:ring-2 focus:ring-scout-500 focus:border-transparent appearance-none";
+    const textareaClass = "w-full px-3 py-2 rounded-md border border-cream-300 bg-cream-50 text-sm focus:outline-none focus:ring-2 focus:ring-scout-500 focus:border-transparent resize-none";
+
     return (
         <div className="w-full max-w-xl mx-auto">
             {/* Progress Indicator */}
             <div className="mb-8 relative flex justify-between px-4">
-                {/* Progress Bar Background */}
-                <div className="absolute top-1/2 left-4 right-4 h-1 bg-sand-200 -z-10 rounded-full" />
-                {/* Active Progress Bar */}
+                <div className="absolute top-1/2 left-4 right-4 h-1 bg-cream-300 -z-10 rounded-full" />
                 <motion.div
-                    className="absolute top-1/2 left-4 h-1 bg-forest-500 -z-10 rounded-full origin-left"
+                    className="absolute top-1/2 left-4 h-1 bg-scout-gradient -z-10 rounded-full origin-left"
                     initial={{ width: "0%" }}
                     animate={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
                     transition={{ duration: 0.5, ease: "easeInOut" }}
@@ -126,21 +126,21 @@ export default function StepForm({ onComplete }: StepFormProps) {
                         <motion.div
                             initial={false}
                             animate={{
-                                backgroundColor: index <= currentStep ? "var(--color-forest-600)" : "var(--color-sand-100)",
-                                color: index <= currentStep ? "white" : "var(--color-forest-300)",
+                                backgroundColor: index <= currentStep ? "var(--color-scout-600)" : "var(--color-cream-100)",
+                                color: index <= currentStep ? "white" : "var(--color-scout-300)",
                                 scale: index === currentStep ? 1.2 : 1,
                             }}
                             transition={{ duration: 0.3 }}
                             className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-colors",
-                                index <= currentStep ? "border-forest-600" : "border-sand-300"
+                                index <= currentStep ? "border-scout-600" : "border-cream-300"
                             )}
                         >
                             {index < currentStep ? <CheckCircle2 className="w-5 h-5" /> : step.id}
                         </motion.div>
                         <span className={cn(
                             "mt-2 text-xs font-medium transition-colors duration-300 absolute -bottom-6 w-24 text-center",
-                            index === currentStep ? "text-forest-700" : "text-muted-foreground opacity-0"
+                            index === currentStep ? "text-scout-700" : "text-muted-foreground opacity-0"
                         )}>
                             {step.title}
                         </span>
@@ -148,7 +148,7 @@ export default function StepForm({ onComplete }: StepFormProps) {
                 ))}
             </div>
 
-            <Card className="min-h-[400px] flex flex-col relative overflow-hidden border-forest-100 shadow-xl bg-white/80 backdrop-blur-sm">
+            <Card className="min-h-[400px] flex flex-col relative overflow-hidden border-scout-100 shadow-xl bg-white/80 backdrop-blur-sm">
                 <CardHeader>
                     <CardTitle>{STEPS[currentStep].title}</CardTitle>
                 </CardHeader>
@@ -172,17 +172,13 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                     <div className="grid gap-2">
                                         <Label htmlFor="linha">Linha de Formação</Label>
                                         <div className="relative">
-                                            <select
-                                                id="linha"
-                                                {...register("linha")}
-                                                className="w-full h-10 px-3 py-2 rounded-md border border-forest-200 bg-sand-50 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent appearance-none"
-                                            >
+                                            <select id="linha" {...register("linha")} className={selectClass}>
                                                 <option value="">Selecione...</option>
                                                 <option value="Escotista">Escotista</option>
                                                 <option value="Dirigente">Dirigente</option>
                                             </select>
                                             <div className="absolute right-3 top-3 pointer-events-none">
-                                                <ArrowRight className="w-4 h-4 text-forest-400 rotate-90" />
+                                                <ArrowRight className="w-4 h-4 text-scout-400 rotate-90" />
                                             </div>
                                         </div>
                                         {errors.linha && <p className="text-red-500 text-xs">{errors.linha.message}</p>}
@@ -191,11 +187,7 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                     <div className="grid gap-2">
                                         <Label htmlFor="ramo">Ramo</Label>
                                         <div className="relative">
-                                            <select
-                                                id="ramo"
-                                                {...register("ramo")}
-                                                className="w-full h-10 px-3 py-2 rounded-md border border-forest-200 bg-sand-50 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent appearance-none"
-                                            >
+                                            <select id="ramo" {...register("ramo")} className={selectClass}>
                                                 <option value="">Selecione...</option>
                                                 <option value="Lobinho">Lobinho</option>
                                                 <option value="Escoteiro">Escoteiro</option>
@@ -203,7 +195,7 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                                 <option value="Pioneiro">Pioneiro</option>
                                             </select>
                                             <div className="absolute right-3 top-3 pointer-events-none">
-                                                <ArrowRight className="w-4 h-4 text-forest-400 rotate-90" />
+                                                <ArrowRight className="w-4 h-4 text-scout-400 rotate-90" />
                                             </div>
                                         </div>
                                         {errors.ramo && <p className="text-red-500 text-xs">{errors.ramo.message}</p>}
@@ -212,18 +204,14 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                     <div className="grid gap-2">
                                         <Label htmlFor="nivel">Nível</Label>
                                         <div className="relative">
-                                            <select
-                                                id="nivel"
-                                                {...register("nivel")}
-                                                className="w-full h-10 px-3 py-2 rounded-md border border-forest-200 bg-sand-50 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent appearance-none"
-                                            >
+                                            <select id="nivel" {...register("nivel")} className={selectClass}>
                                                 <option value="">Selecione...</option>
                                                 <option value="Preliminar">Preliminar</option>
                                                 <option value="Básico">Básico</option>
                                                 <option value="Avançado">Avançado</option>
                                             </select>
                                             <div className="absolute right-3 top-3 pointer-events-none">
-                                                <ArrowRight className="w-4 h-4 text-forest-400 rotate-90" />
+                                                <ArrowRight className="w-4 h-4 text-scout-400 rotate-90" />
                                             </div>
                                         </div>
                                         {errors.nivel && <p className="text-red-500 text-xs">{errors.nivel.message}</p>}
@@ -275,7 +263,7 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                         <textarea
                                             id="contexto"
                                             rows={3}
-                                            className="w-full px-3 py-2 rounded-md border border-forest-200 bg-sand-50 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent resize-none"
+                                            className={textareaClass}
                                             placeholder="Ex: UEL em zona urbana, patrulha em formação..."
                                             {...register("contexto")}
                                         />
@@ -293,7 +281,7 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                         <textarea
                                             id="desafios"
                                             rows={2}
-                                            className="w-full px-3 py-2 rounded-md border border-forest-200 bg-sand-50 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent resize-none"
+                                            className={textareaClass}
                                             placeholder="Ex: Jovens dispersos, falta de materiais..."
                                             {...register("desafios")}
                                         />
@@ -309,12 +297,12 @@ export default function StepForm({ onComplete }: StepFormProps) {
                         </motion.div>
                     </AnimatePresence>
                 </CardContent>
-                <CardFooter className="flex justify-between border-t border-sand-100 bg-sand-50/50 p-6">
+                <CardFooter className="flex justify-between border-t border-cream-100 bg-cream-50/50 p-6">
                     <Button
                         variant="ghost"
                         onClick={prevStep}
                         disabled={currentStep === 0}
-                        className="pl-2"
+                        className="pl-2 text-scout-700 hover:text-scout-900"
                     >
                         <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
                     </Button>

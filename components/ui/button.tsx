@@ -16,7 +16,9 @@ const buttonVariants = cva(
                     "bg-secondary text-secondary-foreground hover:bg-secondary/80",
                 ghost: "hover:bg-accent hover:text-accent-foreground",
                 link: "text-primary underline-offset-4 hover:underline",
-                scout: "bg-forest-700 text-white hover:bg-forest-800 shadow-md border-b-2 border-forest-900 active:translate-y-[1px] active:border-b-0 active:shadow-sm uppercase tracking-wider font-bold",
+                scout: "bg-scout-600 text-white hover:bg-azure-500 shadow-md border-b-2 border-scout-800 active:translate-y-[1px] active:border-b-0 active:shadow-sm uppercase tracking-wider font-bold transition-colors duration-200",
+                azure: "bg-azure-500 text-white hover:bg-azure-600 shadow-md border-b-2 border-azure-700 active:translate-y-[1px] active:border-b-0 active:shadow-sm font-semibold transition-colors duration-200",
+                gold: "bg-gold-500 text-scout-900 hover:bg-gold-600 shadow-md border-b-2 border-gold-700 active:translate-y-[1px] active:border-b-0 active:shadow-sm font-bold transition-colors duration-200",
             },
             size: {
                 default: "h-10 px-4 py-2",

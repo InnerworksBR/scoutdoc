@@ -29,14 +29,16 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-sand-50 flex flex-col items-center justify-center p-4">
+        <div className="min-h-screen bg-scout-gradient-soft flex flex-col items-center justify-center p-4">
             <div className="mb-8 flex flex-col items-center text-center">
-                <Compass className="w-12 h-12 text-forest-600 mb-4" strokeWidth={1.5} />
-                <h1 className="text-2xl font-display font-bold text-forest-900">Bem-vindo de volta</h1>
-                <p className="text-forest-500 text-sm">Acesse sua conta para continuar planejando.</p>
+                <div className="w-16 h-16 bg-scout-gradient rounded-full flex items-center justify-center mb-4 shadow-lg">
+                    <Compass className="w-8 h-8 text-white" strokeWidth={1.5} />
+                </div>
+                <h1 className="text-2xl font-display font-bold text-scout-900">Bem-vindo de volta</h1>
+                <p className="text-scout-500 text-sm">Acesse sua conta para continuar planejando.</p>
             </div>
 
-            <Card className="w-full max-w-md shadow-xl border-forest-100 bg-white">
+            <Card className="w-full max-w-md shadow-xl border-scout-100 bg-white">
                 <CardHeader>
                     <CardTitle className="text-xl">{isLogin ? "Login" : "Cadastro ScoutDoc"}</CardTitle>
                     <CardDescription>{isLogin ? "Entre com suas credenciais UEB." : "Exclusivo para emails @escoteiros.org.br"}</CardDescription>
@@ -50,7 +52,7 @@ export default function LoginPage() {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="password">Senha</Label>
-                                <Link href="#" className="text-xs text-forest-500 hover:text-forest-700">
+                                <Link href="#" className="text-xs text-azure-500 hover:text-azure-700">
                                     Esqueceu?
                                 </Link>
                             </div>
@@ -72,7 +74,7 @@ export default function LoginPage() {
                         <button
                             type="button"
                             onClick={() => setIsLogin(!isLogin)}
-                            className="text-forest-600 font-medium hover:underline focus:outline-none"
+                            className="text-scout-600 font-medium hover:underline focus:outline-none"
                         >
                             {isLogin ? "Cadastre-se" : "Entrar"}
                         </button>
@@ -80,8 +82,8 @@ export default function LoginPage() {
                 </CardFooter>
             </Card>
 
-            <div className="mt-8 text-center text-xs text-forest-300">
-                <p>© 2026 ScoutDoc AI</p>
+            <div className="mt-8 text-center text-xs text-scout-300">
+                <p>© 2026 ScoutDoc AI · Sempre Alerta para Servir</p>
             </div>
         </div>
     );
