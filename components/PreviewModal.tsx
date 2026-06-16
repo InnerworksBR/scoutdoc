@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, X, Download, Loader2 } from "lucide-react";
+import { FileText, X, Download, Loader2, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PreviewModalProps {
@@ -20,13 +20,15 @@ export default function PreviewModal({
     content,
     data,
 }: PreviewModalProps) {
-    const [isDownloading, setIsDownloading] = useState(false);
+    const [isDownloadingDocx, setIsDownloadingDocx] = useState(false);
+    const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
-    const handleDownload = async () => {
+    const handleDownload = async (format: "docx" | "pdf") => {
         if (!data) return;
-        setIsDownloading(true);
+        const setLoading = format === "docx" ? setIsDownloadingDocx : setIsDownloadingPdf;
+        setLoading(true);
         try {
-            const response = await fetch("/api/download/docx", {
+            const response = await fetch(`/api/download/${format}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
@@ -38,7 +40,7 @@ export default function PreviewModal({
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `${data?.title?.replace(/[^a-z0-9]/gi, '_') || "scout_doc"}.docx`;
+            a.download = `${data?.title?.replace(/[^a-z0-9]/gi, "_") || "scout_doc"}.${format}`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -47,7 +49,7 @@ export default function PreviewModal({
             console.error("Download error:", error);
             alert("Erro ao baixar arquivo.");
         } finally {
-            setIsDownloading(false);
+            setLoading(false);
         }
     };
 
@@ -80,12 +82,21 @@ export default function PreviewModal({
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 border-t border-cream-200 bg-cream-50 flex justify-end space-x-2">
+                        <div className="p-4 border-t border-cream-200 bg-cream-50 flex justify-end gap-2 flex-wrap">
                             <Button variant="outline" onClick={onClose} className="border-scout-200 text-scout-700 hover:bg-scout-50">
                                 Fechar
                             </Button>
-                            <Button variant="scout" onClick={handleDownload} disabled={isDownloading || !data}>
-                                {isDownloading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+                            <Button
+                                variant="outline"
+                                onClick={() => handleDownload("pdf")}
+                                disabled={isDownloadingPdf || !data}
+                                className="border-azure-300 text-azure-700 hover:bg-azure-50"
+                            >
+                                {isDownloadingPdf ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileDown className="w-4 h-4 mr-2" />}
+                                Baixar .PDF
+                            </Button>
+                            <Button variant="scout" onClick={() => handleDownload("docx")} disabled={isDownloadingDocx || !data}>
+                                {isDownloadingDocx ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
                                 Baixar .DOCX
                             </Button>
                         </div>

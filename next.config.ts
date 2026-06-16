@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "70mb",
     },
   },
+  // pdfkit carrega assets internos de fonte em runtime Node — não pode ser bundled pelo webpack
+  serverExternalPackages: ["pdfkit"],
 };
 
 export default nextConfig;

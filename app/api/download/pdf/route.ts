@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { DocxGenerator } from "@/lib/docx-generator";
+import { PdfGenerator } from "@/lib/pdf-generator";
 import { generatedContentSchema } from "@/lib/schemas";
 
 export const runtime = "nodejs";
@@ -16,16 +16,16 @@ export async function POST(request: Request) {
             );
         }
 
-        const buffer = await DocxGenerator.generate(parsed.data);
+        const buffer = await PdfGenerator.generate(parsed.data);
         const filename = parsed.data.title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
 
         const response = new NextResponse(new Blob([buffer as any]));
-        response.headers.set("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        response.headers.set("Content-Disposition", `attachment; filename="${filename}.docx"`);
+        response.headers.set("Content-Type", "application/pdf");
+        response.headers.set("Content-Disposition", `attachment; filename="${filename}.pdf"`);
         return response;
 
     } catch (error) {
-        console.error("Error generating DOCX:", error);
+        console.error("Error generating PDF:", error);
         return NextResponse.json({ error: "Failed to generate document" }, { status: 500 });
     }
 }
