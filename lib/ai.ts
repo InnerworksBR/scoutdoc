@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { DocumentTemplate, DynamicDocumentJson } from "./document-template";
+import { buildChatParams } from "./models";
 
 // Initialize OpenAI Client
 const openai = new OpenAI();
@@ -168,15 +169,17 @@ ${title ? `- Título sugerido: "${title}".` : ""}${docsContext}`;
         content: m.content,
     }));
 
-    const completion = await openai.chat.completions.create({
-        model,
-        messages: [
-            { role: "system", content: systemPrompt },
-            ...historyMessages,
-            { role: "user", content: "Gere agora o documento final completo em Markdown, com base em toda a conversa acima." },
-        ],
-        temperature: 0.5,
-    });
+    const completion = (await openai.chat.completions.create(
+        buildChatParams({
+            model,
+            messages: [
+                { role: "system", content: systemPrompt },
+                ...historyMessages,
+                { role: "user", content: "Gere agora o documento final completo em Markdown, com base em toda a conversa acima." },
+            ],
+            temperature: 0.5,
+        }) as any
+    )) as OpenAI.Chat.ChatCompletion;
 
     const md = completion.choices[0].message.content?.trim();
     if (!md) throw new Error("FREEFORM_DOCUMENT_FAILED");
@@ -247,15 +250,17 @@ Preencha TODAS as seções usando EXATAMENTE as keys definidas. Não omita nenhu
     }));
 
     const attempt = async (): Promise<DynamicDocumentJson> => {
-        const completion = await openai.chat.completions.create({
-            model,
-            messages: [
-                { role: "system", content: systemPrompt },
-                ...historyMessages,
-                { role: "user", content: "Com base na conversa acima, gere o documento JSON agora." },
-            ],
-            response_format: { type: "json_object" },
-        });
+        const completion = (await openai.chat.completions.create(
+            buildChatParams({
+                model,
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    ...historyMessages,
+                    { role: "user", content: "Com base na conversa acima, gere o documento JSON agora." },
+                ],
+                responseFormat: { type: "json_object" },
+            }) as any
+        )) as OpenAI.Chat.ChatCompletion;
 
         const raw = completion.choices[0].message.content;
         if (!raw) throw new Error("No content from OpenAI");

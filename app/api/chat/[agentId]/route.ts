@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import OpenAI from "openai";
 import { embedQuery } from "@/lib/rag";
-import { resolveModel } from "@/lib/models";
+import { resolveModel, buildChatParams } from "@/lib/models";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -168,13 +168,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
         }) || []),
     ];
 
-    const stream = await openai.chat.completions.create({
-        model: resolveModel(agent.model as string | null),
-        messages,
-        stream: true,
-        max_tokens: 1500,
-        temperature: 0.7,
-    });
+    const chatModel = resolveModel(agent.model as string | null);
+    const stream = (await openai.chat.completions.create(
+        buildChatParams({
+            model: chatModel,
+            messages,
+            stream: true,
+            maxTokens: 1500,
+            temperature: 0.7,
+            reasoningEffort: "low", // modelos GPT-5/o: mantém o chat ágil
+        }) as any
+    )) as unknown as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
 
     const encoder = new TextEncoder();
     let fullResponse = "";

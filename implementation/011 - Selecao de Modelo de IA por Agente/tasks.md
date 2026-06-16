@@ -10,7 +10,7 @@
 ## Tarefas
 
 - [x] **T-001:** Migração 011 — coluna `agents.model` (default 'gpt-4o')
-- [x] **T-002:** `lib/models.ts` — lista de modelos, default e `resolveModel()`
+- [x] **T-002:** `lib/models.ts` — lista de modelos atuais (GPT-5.x) + anteriores, `resolveModel()`, `isReasoningStyle()` e `buildChatParams()` (params por família)
 - [x] **T-003:** `lib/ai.ts` — geração de documentos aceita `model`
 - [x] **T-004:** Rotas (chat, document, admin POST/PUT) usam/persistem `model`
 - [x] **T-005:** Seletor de modelo no `AgentForm` + validação (tsc/build)

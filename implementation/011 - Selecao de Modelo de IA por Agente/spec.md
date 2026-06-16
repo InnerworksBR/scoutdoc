@@ -38,7 +38,7 @@ O modelo `gpt-4o` estava hardcoded na rota de chat e nas funções de geração 
 | Componente | Tipo | Ação | Descrição |
 |-----------|------|------|-----------|
 | `supabase/schema.sql` | Schema | Modificar | Migração 011: `agents.model text not null default 'gpt-4o'` |
-| `lib/models.ts` | Arquivo | Criar | Lista de modelos, default e `resolveModel()` |
+| `lib/models.ts` | Arquivo | Criar | Lista de modelos, default, `resolveModel()`, `isReasoningStyle()` e `buildChatParams()` (params corretos por família) |
 | `lib/ai.ts` | Arquivo | Modificar | `generateStructuredDocument`/`generateFreeformDocument` aceitam `model` |
 | `app/api/chat/[agentId]/route.ts` | Arquivo | Modificar | Usa `agent.model` no streaming |
 | `app/api/chat/[agentId]/document/route.ts` | Arquivo | Modificar | Passa `agent.model` à geração |
@@ -48,7 +48,11 @@ O modelo `gpt-4o` estava hardcoded na rota de chat e nas funções de geração 
 
 ### 3.3 Modelos Oferecidos
 
-`gpt-4o` (default), `gpt-4o-mini`, `gpt-4.1`, `gpt-4.1-mini`, `gpt-4-turbo`. Todos suportam streaming, visão e `response_format: json_object` (compatíveis com as features de imagem e documentos).
+Geração atual (jun/2026): `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano`.
+Compatibilidade (gerações anteriores): `gpt-4.1`, `gpt-4o` (default), `gpt-4o-mini`, `gpt-4-turbo`.
+Todos suportam visão e structured outputs (json_object).
+
+**Diferença de contrato de API (importante):** a família GPT-5 (e o-series) são modelos de raciocínio — usam `max_completion_tokens` (não `max_tokens`), **não aceitam `temperature` customizada** e suportam `reasoning_effort`. Por isso há um helper `buildChatParams(model, …)` que monta os parâmetros corretos por família, evitando erro de parâmetro não suportado. Detecção por prefixo: `^(o\d|gpt-5)`.
 
 ### 3.4 Modelos de Dados
 
