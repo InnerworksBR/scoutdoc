@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import OpenAI from "openai";
+import { embedQuery } from "@/lib/rag";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -68,11 +69,50 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
         .order("created_at", { ascending: true })
         .limit(20);
 
-    // Construir system prompt com documentos e rótulos de citação
+    // ── Construir contexto de documentos (impl. 008 — RAG com fallback) ──────────
+    // Estratégia: buscar trechos relevantes por similaridade vetorial. Se o agente
+    // ainda não tiver chunks indexados, cai no método antigo (texto truncado).
     const MAX_CHARS_PER_DOC = 8000;
-    const docsWithText: { name: string; text: string }[] = (agent.agent_documents ?? [])
-        .filter((d: any) => d.content_text)
-        .map((d: any) => ({ name: d.name as string, text: (d.content_text as string).slice(0, MAX_CHARS_PER_DOC) }));
+
+    // Recupera os trechos mais relevantes via busca vetorial.
+    async function retrieveRelevantChunks(): Promise<{ name: string; text: string }[]> {
+        const queryText = message?.trim();
+        if (!queryText) return []; // mensagem só com imagem → sem busca textual
+
+        try {
+            const { count } = await supabase
+                .from("agent_document_chunks")
+                .select("id", { count: "exact", head: true })
+                .eq("agent_id", agentId);
+
+            if (!count || count === 0) return []; // sem índice → usa fallback
+
+            const queryEmbedding = await embedQuery(queryText);
+            const { data: matches, error: matchError } = await supabase.rpc("match_agent_chunks", {
+                p_agent_id: agentId,
+                p_query_embedding: queryEmbedding,
+                p_match_count: 8,
+            });
+
+            if (matchError || !matches) return [];
+            return (matches as { name: string; content: string }[]).map((m) => ({
+                name: m.name,
+                text: m.content,
+            }));
+        } catch (err) {
+            console.error("Falha na recuperação RAG, usando fallback:", err);
+            return [];
+        }
+    }
+
+    let docsWithText = await retrieveRelevantChunks();
+
+    // Fallback: agente sem chunks indexados → método antigo (texto truncado)
+    if (docsWithText.length === 0) {
+        docsWithText = (agent.agent_documents ?? [])
+            .filter((d: any) => d.content_text)
+            .map((d: any) => ({ name: d.name as string, text: (d.content_text as string).slice(0, MAX_CHARS_PER_DOC) }));
+    }
 
     const docsContext = docsWithText
         .map((d) => `\n\n=== DOCUMENTO: ${d.name} ===\n[Citar como: [Fonte: ${d.name}]]\n${d.text}`)

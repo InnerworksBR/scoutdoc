@@ -245,3 +245,72 @@ create policy "user_avatars_delete" on storage.objects
     and auth.role() = 'authenticated'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- ============================================================
+-- 12. MIGRAÇÃO 008 — Busca Semântica (RAG) nos Documentos
+-- ============================================================
+-- Extensão de vetores (pgvector). No Supabase, normalmente fica no schema "extensions".
+create extension if not exists vector;
+
+-- Trechos (chunks) dos documentos dos agentes, com embeddings para busca por similaridade.
+-- Dimensão 1536 = modelo OpenAI text-embedding-3-small.
+create table if not exists agent_document_chunks (
+  id uuid primary key default gen_random_uuid(),
+  document_id uuid references agent_documents(id) on delete cascade not null,
+  agent_id uuid references agents(id) on delete cascade not null,
+  chunk_index int not null,
+  content text not null,
+  embedding vector(1536),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table agent_document_chunks enable row level security;
+
+-- Leitura por usuários autenticados (consistente com agent_documents)
+drop policy if exists "agent_chunks_read" on agent_document_chunks;
+create policy "agent_chunks_read" on agent_document_chunks
+  for select using (auth.role() = 'authenticated');
+
+-- Admin pode tudo
+drop policy if exists "agent_chunks_admin_all" on agent_document_chunks;
+create policy "agent_chunks_admin_all" on agent_document_chunks
+  for all using (
+    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
+  );
+
+create index if not exists agent_document_chunks_agent_id_idx on agent_document_chunks (agent_id);
+create index if not exists agent_document_chunks_document_id_idx on agent_document_chunks (document_id);
+
+-- Índice vetorial HNSW para busca aproximada por similaridade de cosseno
+create index if not exists agent_document_chunks_embedding_idx
+  on agent_document_chunks using hnsw (embedding vector_cosine_ops);
+
+-- Função de busca: retorna os trechos mais relevantes de um agente para um embedding de consulta.
+create or replace function match_agent_chunks(
+  p_agent_id uuid,
+  p_query_embedding vector(1536),
+  p_match_count int default 8
+)
+returns table (
+  id uuid,
+  document_id uuid,
+  content text,
+  name text,
+  similarity float
+)
+language sql
+stable
+as $$
+  select
+    c.id,
+    c.document_id,
+    c.content,
+    d.name,
+    1 - (c.embedding <=> p_query_embedding) as similarity
+  from agent_document_chunks c
+  join agent_documents d on d.id = c.document_id
+  where c.agent_id = p_agent_id
+    and c.embedding is not null
+  order by c.embedding <=> p_query_embedding
+  limit p_match_count;
+$$;

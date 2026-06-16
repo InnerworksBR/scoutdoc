@@ -32,7 +32,7 @@ export default async function AgentDocumentsPage({ params }: { params: Promise<{
             </div>
 
             <div className="bg-azure-50 border border-azure-200 rounded-lg p-4 text-sm text-azure-800">
-                <strong>Como funciona:</strong> Faça upload de arquivos PDF ou TXT. O conteúdo será adicionado ao contexto do agente automaticamente, permitindo que ele responda com base nesses documentos.
+                <strong>Como funciona:</strong> Faça upload de arquivos PDF ou TXT. O conteúdo é fragmentado e indexado por busca semântica (RAG): a cada pergunta, o agente recupera apenas os trechos mais relevantes — funcionando bem mesmo com muitos arquivos ou documentos grandes, como nos GPTs do ChatGPT. Documentos enviados antes desta atualização: clique em <strong>Reindexar</strong> para indexá-los.
             </div>
 
             <DocumentManager agentId={id} initialDocuments={agent.agent_documents || []} />

@@ -3,6 +3,7 @@ import { requireAdmin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { extractText } from "unpdf";
+import { indexDocumentChunks } from "@/lib/rag";
 
 // GET /api/admin/agents/[id]/documents
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -72,7 +73,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             .single();
 
         if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
-        return NextResponse.json(data, { status: 201 });
+
+        // Indexação RAG (impl. 008): fragmenta + embeddings + armazena chunks.
+        // Não bloqueia o upload se falhar — o admin pode reindexar depois.
+        let indexedChunks = 0;
+        if (extractedText && data?.id) {
+            try {
+                const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+                if (serviceKey) {
+                    const serviceClient = createServiceClient(
+                        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                        serviceKey
+                    );
+                    indexedChunks = await indexDocumentChunks(serviceClient, {
+                        documentId: data.id,
+                        agentId,
+                        contentText: extractedText,
+                    });
+                }
+            } catch (indexErr) {
+                console.error("Falha ao indexar documento (RAG):", indexErr);
+            }
+        }
+
+        return NextResponse.json({ ...data, indexed_chunks: indexedChunks }, { status: 201 });
 
     } catch (err: any) {
         return NextResponse.json({ error: err?.message ?? "Erro inesperado" }, { status: 500 });
