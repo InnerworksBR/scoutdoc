@@ -32,78 +32,89 @@ export default function DocumentManager({ agentId, initialDocuments }: DocumentM
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
+    const uploadSingle = async (file: File) => {
         const isTxt = file.type === "text/plain" || file.name.endsWith(".txt");
         const isPdf = file.type === "application/pdf" || file.name.endsWith(".pdf");
         if (!isTxt && !isPdf) {
-            setError("Apenas PDF e TXT são suportados.");
-            return;
+            throw new Error(`"${file.name}": apenas PDF e TXT são suportados.`);
         }
+
+        if (isTxt) {
+            // TXT: lê o texto e envia direto para o banco via API
+            setUploadProgress("Lendo arquivo...");
+            const contentText = await file.text();
+
+            setUploadProgress("Salvando no banco...");
+            const res = await fetch(`/api/admin/agents/${agentId}/documents`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: file.name,
+                    fileType: "txt",
+                    fileSize: file.size,
+                    contentText,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
+            setDocuments((prev) => [data, ...prev]);
+
+        } else {
+            // PDF: upload direto para o Supabase Storage via URL assinada
+            setUploadProgress("Obtendo URL de upload...");
+            const urlRes = await fetch(`/api/admin/agents/${agentId}/documents/upload-url`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: file.name }),
+            });
+            const { signedUrl, filePath, error: urlError } = await urlRes.json();
+            if (urlError) throw new Error(urlError);
+
+            setUploadProgress("Enviando arquivo...");
+            const uploadRes = await fetch(signedUrl, {
+                method: "PUT",
+                headers: { "Content-Type": file.type },
+                body: file,
+            });
+            if (!uploadRes.ok) throw new Error("Falha no upload para o Storage");
+
+            setUploadProgress("Salvando registro...");
+            const metaRes = await fetch(`/api/admin/agents/${agentId}/documents`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: file.name,
+                    filePath,
+                    fileType: "pdf",
+                    fileSize: file.size,
+                }),
+            });
+            const data = await metaRes.json();
+            if (!metaRes.ok) throw new Error(data.error || `Erro ${metaRes.status}`);
+            setDocuments((prev) => [data, ...prev]);
+        }
+    };
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files ?? []);
+        if (files.length === 0) return;
 
         setError(null);
         setIsUploading(true);
 
+        const errors: string[] = [];
         try {
-            if (isTxt) {
-                // TXT: lê o texto e envia direto para o banco via API
-                setUploadProgress("Lendo arquivo...");
-                const contentText = await file.text();
-
-                setUploadProgress("Salvando no banco...");
-                const res = await fetch(`/api/admin/agents/${agentId}/documents`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        name: file.name,
-                        fileType: "txt",
-                        fileSize: file.size,
-                        contentText,
-                    }),
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
-                setDocuments((prev) => [data, ...prev]);
-
-            } else {
-                // PDF: upload direto para o Supabase Storage via URL assinada
-                setUploadProgress("Obtendo URL de upload...");
-                const urlRes = await fetch(`/api/admin/agents/${agentId}/documents/upload-url`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name: file.name }),
-                });
-                const { signedUrl, filePath, error: urlError } = await urlRes.json();
-                if (urlError) throw new Error(urlError);
-
-                setUploadProgress("Enviando arquivo...");
-                const uploadRes = await fetch(signedUrl, {
-                    method: "PUT",
-                    headers: { "Content-Type": file.type },
-                    body: file,
-                });
-                if (!uploadRes.ok) throw new Error("Falha no upload para o Storage");
-
-                setUploadProgress("Salvando registro...");
-                const metaRes = await fetch(`/api/admin/agents/${agentId}/documents`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        name: file.name,
-                        filePath,
-                        fileType: "pdf",
-                        fileSize: file.size,
-                    }),
-                });
-                const data = await metaRes.json();
-                if (!metaRes.ok) throw new Error(data.error || `Erro ${metaRes.status}`);
-                setDocuments((prev) => [data, ...prev]);
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const prefix = files.length > 1 ? `(${i + 1}/${files.length}) ${file.name} — ` : "";
+                try {
+                    setUploadProgress(`${prefix}preparando...`);
+                    await uploadSingle(file);
+                } catch (err: any) {
+                    errors.push(err.message);
+                }
             }
-
-        } catch (err: any) {
-            setError(err.message);
+            if (errors.length > 0) setError(errors.join(" "));
         } finally {
             setIsUploading(false);
             setUploadProgress("");
@@ -132,11 +143,12 @@ export default function DocumentManager({ agentId, initialDocuments }: DocumentM
                 onClick={() => !isUploading && fileInputRef.current?.click()}
             >
                 <Upload className="w-8 h-8 text-azure-400 mb-3" />
-                <p className="font-semibold text-scout-800">Clique para selecionar arquivo</p>
-                <p className="text-xs text-scout-500 mt-1">PDF ou TXT • Máx. 50 MB</p>
+                <p className="font-semibold text-scout-800">Clique para selecionar arquivos</p>
+                <p className="text-xs text-scout-500 mt-1">PDF ou TXT • Máx. 50 MB cada • vários de uma vez</p>
                 <input
                     ref={fileInputRef}
                     type="file"
+                    multiple
                     accept=".pdf,.txt,text/plain,application/pdf"
                     className="hidden"
                     onChange={handleUpload}
