@@ -69,15 +69,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
         .order("created_at", { ascending: true })
         .limit(20);
 
-    // ── Construir contexto de documentos (impl. 008 — RAG com fallback) ──────────
-    // Estratégia: buscar trechos relevantes por similaridade vetorial. Se o agente
-    // ainda não tiver chunks indexados, cai no método antigo (texto truncado).
+    // ── Construir contexto de documentos (impl. 008/010 — RAG com relevância) ────
+    // Busca trechos por similaridade vetorial e descarta os irrelevantes por um
+    // limiar. Distingue 3 situações:
+    //   1. Agente sem índice          → fallback ao texto truncado (legado)
+    //   2. Indexado, há trechos bons   → injeta só os relevantes
+    //   3. Indexado, nada relevante    → NÃO injeta nada (responde sem citar)
     const MAX_CHARS_PER_DOC = 8000;
+    // Similaridade de cosseno mínima (0..1) para um trecho ser considerado relevante.
+    // text-embedding-3-small: ~0.30 separa bem relevante de tangencial.
+    // Ajustável via env RAG_MIN_SIMILARITY (ex.: 0.35 = mais rígido, 0.25 = mais permissivo).
+    const RAG_MIN_SIMILARITY = Number(process.env.RAG_MIN_SIMILARITY) || 0.3;
+    const RAG_CANDIDATES = 12;   // candidatos buscados antes de filtrar
+    const RAG_MAX_USED = 6;      // trechos efetivamente usados após o filtro
 
-    // Recupera os trechos mais relevantes via busca vetorial.
-    async function retrieveRelevantChunks(): Promise<{ name: string; text: string }[]> {
+    async function retrieveRelevantChunks(): Promise<{ indexed: boolean; chunks: { name: string; text: string }[] }> {
         const queryText = message?.trim();
-        if (!queryText) return []; // mensagem só com imagem → sem busca textual
+        if (!queryText) return { indexed: false, chunks: [] }; // só imagem → sem busca
 
         try {
             const { count } = await supabase
@@ -85,30 +93,35 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
                 .select("id", { count: "exact", head: true })
                 .eq("agent_id", agentId);
 
-            if (!count || count === 0) return []; // sem índice → usa fallback
+            if (!count || count === 0) return { indexed: false, chunks: [] };
 
             const queryEmbedding = await embedQuery(queryText);
             const { data: matches, error: matchError } = await supabase.rpc("match_agent_chunks", {
                 p_agent_id: agentId,
                 p_query_embedding: queryEmbedding,
-                p_match_count: 8,
+                p_match_count: RAG_CANDIDATES,
             });
 
-            if (matchError || !matches) return [];
-            return (matches as { name: string; content: string }[]).map((m) => ({
-                name: m.name,
-                text: m.content,
-            }));
+            if (matchError || !matches) return { indexed: true, chunks: [] };
+
+            const relevant = (matches as { name: string; content: string; similarity: number }[])
+                .filter((m) => (m.similarity ?? 0) >= RAG_MIN_SIMILARITY)
+                .slice(0, RAG_MAX_USED)
+                .map((m) => ({ name: m.name, text: m.content }));
+
+            return { indexed: true, chunks: relevant };
         } catch (err) {
-            console.error("Falha na recuperação RAG, usando fallback:", err);
-            return [];
+            console.error("Falha na recuperação RAG:", err);
+            return { indexed: false, chunks: [] };
         }
     }
 
-    let docsWithText = await retrieveRelevantChunks();
+    const rag = await retrieveRelevantChunks();
+    let docsWithText = rag.chunks;
 
-    // Fallback: agente sem chunks indexados → método antigo (texto truncado)
-    if (docsWithText.length === 0) {
+    // Fallback ao método antigo SOMENTE quando o agente não está indexado.
+    // (Se está indexado mas nada passou no limiar, mantém vazio de propósito.)
+    if (!rag.indexed) {
         docsWithText = (agent.agent_documents ?? [])
             .filter((d: any) => d.content_text)
             .map((d: any) => ({ name: d.name as string, text: (d.content_text as string).slice(0, MAX_CHARS_PER_DOC) }));
@@ -119,12 +132,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
         .join("");
 
     const citationInstruction = docsWithText.length > 0
-        ? `\n\n## INSTRUÇÃO DE CITAÇÃO\nSempre que usar informação de um dos documentos acima, cite a fonte IMEDIATAMENTE após a afirmação usando o marcador exato: [Fonte: nome-do-documento]. Use o nome exato conforme indicado em "Citar como". Exemplo: "O método escoteiro se baseia no aprendizado pela prática [Fonte: POR.pdf]." Se a informação não vier dos documentos, não invente fontes.\n\n## DOCUMENTOS DE REFERÊNCIA`
+        ? `\n\n## INSTRUÇÃO DE USO DOS DOCUMENTOS\nOs trechos abaixo foram recuperados por busca e PODEM ser relevantes para a pergunta — avalie antes de usar.\n- Use um trecho APENAS se ele realmente contiver a informação que responde à pergunta. Nesse caso, cite a fonte imediatamente após a afirmação com o marcador exato: [Fonte: nome-do-documento] (use o nome indicado em "Citar como").\n- Se os trechos NÃO tratarem do que foi perguntado, IGNORE-OS e responda com seu próprio conhecimento, SEM citar fontes e sem mencionar os documentos.\n- Nunca invente fontes nem force uma citação só porque um documento foi fornecido.\n\n## TRECHOS POSSIVELMENTE RELEVANTES`
         : "";
 
     const systemPrompt = docsWithText.length > 0
         ? `${agent.system_prompt}${citationInstruction}${docsContext}`
-        : `${agent.system_prompt}\n\nIMPORTANTE: Não há documentos de referência disponíveis nesta sessão. Responda com base no seu conhecimento e NÃO cite fontes ou documentos.`;
+        : `${agent.system_prompt}\n\nIMPORTANTE: Não há documentos de referência relevantes para esta pergunta. Responda com base no seu conhecimento e NÃO cite fontes ou documentos.`;
 
     // Converter histórico para mensagens OpenAI (suporte multimodal)
     const buildUserContent = (
