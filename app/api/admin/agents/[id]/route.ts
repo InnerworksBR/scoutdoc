@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { documentTemplateSchema } from "@/lib/document-template";
+import { resolveModel } from "@/lib/models";
 
 // GET /api/admin/agents/[id]
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -41,6 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         system_prompt,
         avatar_color,
         avatar_url,
+        model,
         is_active,
         welcome_message,
         suggestions,
@@ -73,6 +75,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             system_prompt,
             avatar_color,
             avatar_url: typeof avatar_url === "string" ? avatar_url : avatar_url === null ? null : undefined,
+            model: model !== undefined ? resolveModel(model) : undefined,
             is_active,
             welcome_message: welcome_message?.trim() || null,
             suggestions: normalizeSuggestions(suggestions),

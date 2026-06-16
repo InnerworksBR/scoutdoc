@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { documentTemplateSchema, mapDynamicJsonToSections, formatPreviewContent } from "@/lib/document-template";
 import { generateStructuredDocument, generateFreeformDocument } from "@/lib/ai";
 import { markdownToSections } from "@/lib/markdown-to-model";
+import { resolveModel } from "@/lib/models";
 import { DocxGenerator } from "@/lib/docx-generator";
 import { PdfGenerator } from "@/lib/pdf-generator";
 
@@ -34,7 +35,7 @@ export async function POST(
     // Fetch agent with template and reference documents
     const { data: agent, error: agentError } = await supabase
         .from("agents")
-        .select("id, name, system_prompt, produces_document, document_template, document_title, agent_documents(name, content_text)")
+        .select("id, name, system_prompt, model, produces_document, document_template, document_title, agent_documents(name, content_text)")
         .eq("id", agentId)
         .eq("is_active", true)
         .single();
@@ -91,6 +92,8 @@ export async function POST(
         content: m.content as string,
     }));
 
+    const agentModel = resolveModel(agent.model as string | null);
+
     const documentTitle =
         (agent.document_title as string | null) ??
         template?.title ??
@@ -104,7 +107,7 @@ export async function POST(
         // Modo estruturado (impl. 004): JSON validado contra o template
         let dynamicJson;
         try {
-            dynamicJson = await generateStructuredDocument(template, historyForAi, docs);
+            dynamicJson = await generateStructuredDocument(template, historyForAi, docs, agentModel);
         } catch (err: any) {
             if (err.message === "STRUCTURED_DOCUMENT_FAILED") {
                 return NextResponse.json(
@@ -134,7 +137,8 @@ export async function POST(
                 agent.system_prompt as string,
                 historyForAi,
                 docs,
-                documentTitle
+                documentTitle,
+                agentModel
             );
         } catch (err: any) {
             console.error("Freeform document generation error:", err);

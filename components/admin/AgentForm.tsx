@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Save, Trash2, Plus, X, FileText, Camera } from "lucide-react";
+import { Loader2, Save, Trash2, Plus, X, FileText, Camera, Cpu } from "lucide-react";
 import { validateImageFile, MAX_AVATAR_IMAGE_SIZE } from "@/lib/imageValidation";
+import { GPT_MODELS, DEFAULT_GPT_MODEL } from "@/lib/models";
 
 const AVATAR_COLORS = [
     "linear-gradient(135deg, #38a169, #3b82f6)",  // Verde → Azul (padrão)
@@ -31,6 +32,7 @@ interface AgentFormProps {
         suggestions?: string[] | null;
         produces_document?: boolean;
         document_title?: string | null;
+        model?: string | null;
     };
 }
 
@@ -43,6 +45,7 @@ export default function AgentForm({ agent }: AgentFormProps) {
     const [description, setDescription] = useState(agent?.description || "");
     const [systemPrompt, setSystemPrompt] = useState(agent?.system_prompt || "");
     const [avatarColor, setAvatarColor] = useState(agent?.avatar_color || AVATAR_COLORS[0]);
+    const [model, setModel] = useState(agent?.model || DEFAULT_GPT_MODEL);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(agent?.avatar_url ?? null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -140,6 +143,7 @@ export default function AgentForm({ agent }: AgentFormProps) {
                     system_prompt: systemPrompt,
                     avatar_color: avatarColor,
                     avatar_url: avatarUrl,
+                    model,
                     is_active: isActive,
                     welcome_message: welcomeMessage.trim() || null,
                     suggestions: suggestions.map((s) => s.trim()).filter(Boolean),
@@ -226,6 +230,29 @@ export default function AgentForm({ agent }: AgentFormProps) {
                         />
                         <p className="text-xs text-scout-400">
                             Defina a personalidade, especialidade e comportamento do agente. Os documentos anexados serão adicionados automaticamente ao contexto.
+                        </p>
+                    </div>
+
+                    {/* Modelo de IA */}
+                    <div className="space-y-2">
+                        <Label htmlFor="model" className="flex items-center gap-1.5">
+                            <Cpu className="w-3.5 h-3.5 text-azure-600" />
+                            Modelo de IA
+                        </Label>
+                        <select
+                            id="model"
+                            value={model}
+                            onChange={(e) => setModel(e.target.value)}
+                            className="w-full h-10 px-3 rounded-lg border border-cream-300 bg-cream-50 text-sm focus:outline-none focus:ring-2 focus:ring-scout-500 focus:border-transparent"
+                        >
+                            {GPT_MODELS.map((m) => (
+                                <option key={m.value} value={m.value}>
+                                    {m.label} — {m.hint}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-scout-400">
+                            Modelo da OpenAI usado nas respostas do chat e na geração de documentos deste agente.
                         </p>
                     </div>
 

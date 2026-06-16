@@ -136,7 +136,8 @@ export async function generateFreeformDocument(
     agentSystemPrompt: string,
     history: { role: "user" | "assistant"; content: string }[],
     docs: { name: string; text: string }[],
-    title?: string
+    title?: string,
+    model: string = "gpt-4o"
 ): Promise<string> {
     if (!process.env.OPENAI_API_KEY) {
         throw new Error("OPENAI_API_KEY is not set");
@@ -168,7 +169,7 @@ ${title ? `- Título sugerido: "${title}".` : ""}${docsContext}`;
     }));
 
     const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model,
         messages: [
             { role: "system", content: systemPrompt },
             ...historyMessages,
@@ -187,7 +188,8 @@ ${title ? `- Título sugerido: "${title}".` : ""}${docsContext}`;
 export async function generateStructuredDocument(
     template: DocumentTemplate,
     history: { role: "user" | "assistant"; content: string }[],
-    docs: { name: string; text: string }[]
+    docs: { name: string; text: string }[],
+    model: string = "gpt-4o"
 ): Promise<DynamicDocumentJson> {
     if (!process.env.OPENAI_API_KEY) {
         throw new Error("OPENAI_API_KEY is not set");
@@ -246,7 +248,7 @@ Preencha TODAS as seções usando EXATAMENTE as keys definidas. Não omita nenhu
 
     const attempt = async (): Promise<DynamicDocumentJson> => {
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model,
             messages: [
                 { role: "system", content: systemPrompt },
                 ...historyMessages,

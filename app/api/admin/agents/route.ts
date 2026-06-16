@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { documentTemplateSchema } from "@/lib/document-template";
+import { resolveModel } from "@/lib/models";
 
 // GET /api/admin/agents — listar todos os agentes
 export async function GET() {
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
         system_prompt,
         avatar_color,
         avatar_url,
+        model,
         is_active,
         welcome_message,
         suggestions,
@@ -74,6 +76,7 @@ export async function POST(req: NextRequest) {
             system_prompt,
             avatar_color: avatar_color || "linear-gradient(135deg, #38a169, #3b82f6)",
             avatar_url: typeof avatar_url === "string" ? avatar_url : null,
+            model: resolveModel(model),
             is_active: is_active ?? true,
             created_by: user!.id,
             welcome_message: welcome_message?.trim() || null,

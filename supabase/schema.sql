@@ -314,3 +314,9 @@ as $$
   order by c.embedding <=> p_query_embedding
   limit p_match_count;
 $$;
+
+-- ============================================================
+-- 13. MIGRAÇÃO 011 — Modelo de IA por Agente
+-- ============================================================
+alter table agents
+  add column if not exists model text not null default 'gpt-4o';
