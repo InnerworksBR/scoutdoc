@@ -66,13 +66,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
         .order("created_at", { ascending: true })
         .limit(20);
 
-    // Construir system prompt com documentos
-    const docsContext = agent.agent_documents
-        ?.filter((d: any) => d.content_text)
-        .map((d: any) => `\n\n=== DOCUMENTO: ${d.name} ===\n${d.content_text}`)
-        .join("") || "";
+    // Construir system prompt com documentos e rótulos de citação
+    const MAX_CHARS_PER_DOC = 8000;
+    const docsWithText: { name: string; text: string }[] = (agent.agent_documents ?? [])
+        .filter((d: any) => d.content_text)
+        .map((d: any) => ({ name: d.name as string, text: (d.content_text as string).slice(0, MAX_CHARS_PER_DOC) }));
 
-    const systemPrompt = `${agent.system_prompt}${docsContext ? `\n\n## DOCUMENTOS DE REFERÊNCIA${docsContext}` : ""}`;
+    const docsContext = docsWithText
+        .map((d) => `\n\n=== DOCUMENTO: ${d.name} ===\n[Citar como: [Fonte: ${d.name}]]\n${d.text}`)
+        .join("");
+
+    const citationInstruction = docsWithText.length > 0
+        ? `\n\n## INSTRUÇÃO DE CITAÇÃO\nSempre que usar informação de um dos documentos acima, cite a fonte IMEDIATAMENTE após a afirmação usando o marcador exato: [Fonte: nome-do-documento]. Use o nome exato conforme indicado em "Citar como". Exemplo: "O método escoteiro se baseia no aprendizado pela prática [Fonte: POR.pdf]." Se a informação não vier dos documentos, não invente fontes.\n\n## DOCUMENTOS DE REFERÊNCIA`
+        : "";
+
+    const systemPrompt = docsWithText.length > 0
+        ? `${agent.system_prompt}${citationInstruction}${docsContext}`
+        : `${agent.system_prompt}\n\nIMPORTANTE: Não há documentos de referência disponíveis nesta sessão. Responda com base no seu conhecimento e NÃO cite fontes ou documentos.`;
 
     // Chamar OpenAI com streaming
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [

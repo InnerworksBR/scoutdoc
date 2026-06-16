@@ -47,9 +47,9 @@ Criar um Plano de Unidade Didática (PUD) técnico, andragógico e aplicável, s
 
 REGRAS OBRIGATÓRIAS:
 1. FOCO ANDRAGÓGICO: Conteúdo focado no adulto (se Linha Dirigente/Escotista) ou adequado à faixa etária (se Ramo).
-2. BASEADO EM PROBLEMAS: Use os "Dafios Reais" informados para contextualizar a atividade.
+2. BASEADO EM PROBLEMAS: Use os "Desafios Reais" informados para contextualizar a atividade.
 3. ESTRUTURA DE TEMPO: Total de 60-90 min (conforme input). Distribua em: Abertura, Desenvolvimento (Dinâmica/Prática), Debate/Reflexão, Encerramento.
-4. CITAÇÕES: Use citações breves de B-P ou documentos oficiais (Ex: "Política Nacional de Adultos – Cap. 3 – p. 14").
+4. CITAÇÕES NO CAMPO "source": Preencha APENAS com referências verificáveis de documentos oficiais conhecidos da UEB (ex.: "Política Nacional de Adultos (PNAME) – Cap. 3, p. 14", "Princípios, Organização e Regras (POR) – Seção 4.2", "Matriz de Conteúdo do Sistema de Formação – UEB, 2022"). NUNCA invente títulos, capítulos, páginas ou códigos. Se não houver referência verificável, use exatamente: "N/A".
 5. SEGURANÇA: Inclua proteção infantojuvenil e gestão de risco.
 
 SAÍDA ESPERADA (JSON):

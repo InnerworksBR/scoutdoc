@@ -5,6 +5,8 @@ import { Send, Plus, MessageSquare, Loader2, ChevronLeft, Compass } from "lucide
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import CitationBadge, { ReferenceFooter } from "@/components/CitationBadge";
+import { parseCitations } from "@/lib/citations";
 
 interface Message {
     id?: string;
@@ -35,6 +37,28 @@ const SUGGESTED = [
     "Quais são os princípios fundamentais do método escoteiro?",
     "Como organizar uma atividade de campo para escoteiros?",
 ];
+
+function AssistantContent({ content }: { content: string }) {
+    const { segments, references } = parseCitations(content);
+    return (
+        <div>
+            <p className="whitespace-pre-wrap">
+                {segments.map((seg, i) =>
+                    seg.type === "text" ? (
+                        <span key={i}>{seg.value}</span>
+                    ) : (
+                        <CitationBadge
+                            key={i}
+                            source={seg.source}
+                            index={references.indexOf(seg.source)}
+                        />
+                    )
+                )}
+            </p>
+            <ReferenceFooter references={references} />
+        </div>
+    );
+}
 
 export default function ChatInterface({
     agentId,
@@ -361,7 +385,7 @@ export default function ChatInterface({
                                                 borderLeftColor: agentColor,
                                             }}
                                         >
-                                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                                            <AssistantContent content={msg.content} />
                                         </div>
                                     )}
 
