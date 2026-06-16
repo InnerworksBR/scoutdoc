@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
+import { documentTemplateSchema } from "@/lib/document-template";
 
 // GET /api/admin/agents — listar todos os agentes
 export async function GET() {
@@ -31,7 +32,18 @@ export async function POST(req: NextRequest) {
     if (error) return error;
 
     const body = await req.json();
-    const { name, description, system_prompt, avatar_color, is_active, welcome_message, suggestions } = body;
+    const {
+        name,
+        description,
+        system_prompt,
+        avatar_color,
+        is_active,
+        welcome_message,
+        suggestions,
+        produces_document,
+        document_title,
+        document_template,
+    } = body;
 
     if (!name || !system_prompt) {
         return NextResponse.json({ error: "nome e system_prompt são obrigatórios" }, { status: 400 });
@@ -39,6 +51,17 @@ export async function POST(req: NextRequest) {
 
     if (suggestions !== undefined && suggestions !== null && !Array.isArray(suggestions)) {
         return NextResponse.json({ error: "suggestions deve ser um array de strings" }, { status: 400 });
+    }
+
+    // Validate document_template when produces_document is true
+    if (produces_document) {
+        const tplParsed = documentTemplateSchema.safeParse(document_template);
+        if (!tplParsed.success) {
+            return NextResponse.json(
+                { error: tplParsed.error.issues[0]?.message ?? "document_template inválido" },
+                { status: 400 }
+            );
+        }
     }
 
     const supabase = await createClient();
@@ -53,6 +76,9 @@ export async function POST(req: NextRequest) {
             created_by: user!.id,
             welcome_message: welcome_message?.trim() || null,
             suggestions: normalizeSuggestions(suggestions),
+            produces_document: produces_document ?? false,
+            document_title: typeof document_title === "string" ? document_title.trim() || null : null,
+            document_template: produces_document ? (document_template ?? null) : null,
         })
         .select()
         .single();

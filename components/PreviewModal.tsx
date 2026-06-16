@@ -11,6 +11,7 @@ interface PreviewModalProps {
     title: string;
     content: string | null;
     data?: any;
+    downloadHandler?: (format: "docx" | "pdf") => Promise<void>;
 }
 
 export default function PreviewModal({
@@ -19,15 +20,20 @@ export default function PreviewModal({
     title,
     content,
     data,
+    downloadHandler,
 }: PreviewModalProps) {
     const [isDownloadingDocx, setIsDownloadingDocx] = useState(false);
     const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
     const handleDownload = async (format: "docx" | "pdf") => {
-        if (!data) return;
         const setLoading = format === "docx" ? setIsDownloadingDocx : setIsDownloadingPdf;
         setLoading(true);
         try {
+            if (downloadHandler) {
+                await downloadHandler(format);
+                return;
+            }
+            if (!data) return;
             const response = await fetch(`/api/download/${format}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

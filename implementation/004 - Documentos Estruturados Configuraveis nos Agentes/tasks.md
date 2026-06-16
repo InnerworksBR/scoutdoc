@@ -1,7 +1,7 @@
 # 004 - Documentos Estruturados Configuráveis nos Agentes — Tarefas
 
 > **ID:** 004
-> **Status:** 🟡 Planejada
+> **Status:** 🟢 Concluída
 > **Prioridade:** 🟠 Alta
 > **Criada em:** 2026-06-16
 > **Última atualização:** 2026-06-16
@@ -161,16 +161,16 @@
 
 | Tarefa | Fase | Descrição curta | Status | Estimativa |
 | --- | --- | --- | --- | --- |
-| T-001 | Banco/Migration | Colunas de documento em `agents` | ⬜ Pendente | 🟢 Baixa |
-| T-002 | Backend Geração | Tipos + validação do template | ⬜ Pendente | 🟡 Média |
-| T-003 | Backend Geração | Mapeador JSON → seções (003) | ⬜ Pendente | 🟠 Alta |
-| T-004 | Backend Geração | `generateStructuredDocument` (gpt-4o) | ⬜ Pendente | 🟠 Alta |
-| T-005 | Backend Geração | Rota `POST .../document` | ⬜ Pendente | 🟠 Alta |
-| T-006 | Admin Config | Validação nas rotas admin | ⬜ Pendente | 🟡 Média |
-| T-007 | Admin Config | Toggle + editor no `AgentForm` | ⬜ Pendente | 🟠 Alta |
-| T-008 | Frontend Chat | Carregar campos na página | ⬜ Pendente | 🟢 Baixa |
-| T-009 | Frontend Chat | Botão "Gerar documento" | ⬜ Pendente | 🟡 Média |
-| T-010 | Frontend Chat | Preview + download | ⬜ Pendente | 🟡 Média |
+| T-001 | Banco/Migration | Colunas de documento em `agents` | ✅ Concluída | 🟢 Baixa |
+| T-002 | Backend Geração | Tipos + validação do template | ✅ Concluída | 🟡 Média |
+| T-003 | Backend Geração | Mapeador JSON → seções (003) | ✅ Concluída | 🟠 Alta |
+| T-004 | Backend Geração | `generateStructuredDocument` (gpt-4o) | ✅ Concluída | 🟠 Alta |
+| T-005 | Backend Geração | Rota `POST .../document` | ✅ Concluída | 🟠 Alta |
+| T-006 | Admin Config | Validação nas rotas admin | ✅ Concluída | 🟡 Média |
+| T-007 | Admin Config | Toggle + editor no `AgentForm` | ✅ Concluída | 🟠 Alta |
+| T-008 | Frontend Chat | Carregar campos na página | ✅ Concluída | 🟢 Baixa |
+| T-009 | Frontend Chat | Botão "Gerar documento" | ✅ Concluída | 🟡 Média |
+| T-010 | Frontend Chat | Preview + download | ✅ Concluída | 🟡 Média |
 | T-011 | Testes | Unitários (template/mapeador/prompt) | ⬜ Pendente | 🟡 Média |
 | T-012 | Testes | Integração (rotas/geração) | ⬜ Pendente | 🟠 Alta |
 | T-013 | Testes | Aceitação end-to-end | ⬜ Pendente | 🟡 Média |

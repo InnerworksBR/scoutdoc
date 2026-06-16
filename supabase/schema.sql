@@ -177,3 +177,11 @@ create index if not exists messages_conversation_id_idx on messages (conversatio
 alter table agents
   add column if not exists welcome_message text,
   add column if not exists suggestions jsonb not null default '[]'::jsonb;
+
+-- ============================================================
+-- 8. MIGRAÇÃO 004 — Documentos Estruturados Configuráveis
+-- ============================================================
+alter table agents
+  add column if not exists produces_document boolean not null default false,
+  add column if not exists document_template jsonb,
+  add column if not exists document_title text;

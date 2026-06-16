@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
+import { documentTemplateSchema } from "@/lib/document-template";
 
 // GET /api/admin/agents/[id]
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -34,10 +35,31 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     const body = await req.json();
-    const { name, description, system_prompt, avatar_color, is_active, welcome_message, suggestions } = body;
+    const {
+        name,
+        description,
+        system_prompt,
+        avatar_color,
+        is_active,
+        welcome_message,
+        suggestions,
+        produces_document,
+        document_title,
+        document_template,
+    } = body;
 
     if (suggestions !== undefined && suggestions !== null && !Array.isArray(suggestions)) {
         return NextResponse.json({ error: "suggestions deve ser um array de strings" }, { status: 400 });
+    }
+
+    if (produces_document) {
+        const tplParsed = documentTemplateSchema.safeParse(document_template);
+        if (!tplParsed.success) {
+            return NextResponse.json(
+                { error: tplParsed.error.issues[0]?.message ?? "document_template inválido" },
+                { status: 400 }
+            );
+        }
     }
 
     const supabase = await createClient();
@@ -51,6 +73,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             is_active,
             welcome_message: welcome_message?.trim() || null,
             suggestions: normalizeSuggestions(suggestions),
+            produces_document: produces_document ?? false,
+            document_title: typeof document_title === "string" ? document_title.trim() || null : null,
+            document_template: produces_document ? (document_template ?? null) : null,
             updated_at: new Date().toISOString(),
         })
         .eq("id", id)

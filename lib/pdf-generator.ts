@@ -24,6 +24,10 @@ export class PdfGenerator {
         const model = buildPudModel(content);
         return renderModel(model);
     }
+
+    public static async generateFromModel(model: DocumentModel): Promise<Buffer> {
+        return renderModel(model);
+    }
 }
 
 function renderModel(model: DocumentModel): Promise<Buffer> {

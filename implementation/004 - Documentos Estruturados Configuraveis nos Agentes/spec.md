@@ -1,7 +1,7 @@
 # 004 - Documentos Estruturados Configuráveis nos Agentes
 
 > **ID:** 004
-> **Status:** 🟡 Planejada
+> **Status:** 🟢 Concluída
 > **Prioridade:** 🟠 Alta
 > **Criada em:** 2026-06-16
 > **Última atualização:** 2026-06-16

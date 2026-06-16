@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Plus, MessageSquare, Loader2, ChevronLeft, Compass } from "lucide-react";
+import { Send, Plus, MessageSquare, Loader2, ChevronLeft, Compass, FileDown } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import CitationBadge, { ReferenceFooter } from "@/components/CitationBadge";
 import { parseCitations } from "@/lib/citations";
+import PreviewModal from "@/components/PreviewModal";
+import { formatPreviewContent } from "@/lib/document-template";
+import type { DocumentTemplate } from "@/lib/document-template";
 
 interface Message {
     id?: string;
@@ -30,6 +33,9 @@ interface ChatInterfaceProps {
     conversations: Conversation[];
     welcomeMessage?: string | null;
     suggestions?: string[] | null;
+    producesDocument?: boolean;
+    documentTemplate?: DocumentTemplate | null;
+    documentTitle?: string | null;
 }
 
 const SUGGESTED = [
@@ -69,6 +75,9 @@ export default function ChatInterface({
     conversations: initialConversations,
     welcomeMessage,
     suggestions: agentSuggestions,
+    producesDocument,
+    documentTemplate,
+    documentTitle,
 }: ChatInterfaceProps) {
     const activeSuggestions = Array.isArray(agentSuggestions) && agentSuggestions.length > 0
         ? agentSuggestions
@@ -82,6 +91,14 @@ export default function ChatInterface({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const supabase = createClient();
+
+    // Document generation state (impl. 004)
+    const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
+    const [docPreviewOpen, setDocPreviewOpen] = useState(false);
+    const [docPreviewContent, setDocPreviewContent] = useState<string | null>(null);
+    const [docPreviewTitle, setDocPreviewTitle] = useState("");
+    const [docPreviewData, setDocPreviewData] = useState<any>(null);
+    const [docGenerateError, setDocGenerateError] = useState<string | null>(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -101,6 +118,60 @@ export default function ChatInterface({
         setMessages([]);
         setConversationId(null);
         setTimeout(() => inputRef.current?.focus(), 50);
+    };
+
+    const handleGenerateDocument = async () => {
+        if (!conversationId || isGeneratingDoc || isStreaming) return;
+        setIsGeneratingDoc(true);
+        setDocGenerateError(null);
+
+        try {
+            const res = await fetch(`/api/chat/${agentId}/document`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ conversationId, preview: true }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Erro ao gerar documento");
+            }
+
+            const preview = await res.json();
+            const previewTitle = preview.title || documentTitle || agentName;
+            const previewContent = documentTemplate
+                ? formatPreviewContent(preview, documentTemplate)
+                : preview.content || "(sem conteúdo)";
+
+            setDocPreviewTitle(previewTitle);
+            setDocPreviewContent(previewContent);
+            setDocPreviewData(preview);
+            setDocPreviewOpen(true);
+        } catch (err: any) {
+            setDocGenerateError(err.message);
+        } finally {
+            setIsGeneratingDoc(false);
+        }
+    };
+
+    const handleDocDownload = async (format: "docx" | "pdf") => {
+        if (!conversationId) return;
+        const res = await fetch(`/api/chat/${agentId}/document`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ conversationId, format, preview: false }),
+        });
+        if (!res.ok) throw new Error("Falha ao baixar arquivo");
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const name = (documentTitle || docPreviewTitle || agentName).replace(/[^a-z0-9]/gi, "_").toLowerCase();
+        a.download = `${name}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
     };
 
     const sendMessage = async (text?: string) => {
@@ -168,6 +239,7 @@ export default function ChatInterface({
     const userInitial = userEmail?.[0]?.toUpperCase() ?? "U";
 
     return (
+        <>
         <div className="flex flex-1 overflow-hidden">
 
             {/* ── Sidebar ── */}
@@ -302,6 +374,34 @@ export default function ChatInterface({
                         <span className="w-1.5 h-1.5 rounded-full bg-scout-500 animate-pulse" />
                         Online
                     </div>
+
+                    {producesDocument && (
+                        <button
+                            onClick={handleGenerateDocument}
+                            disabled={!conversationId || messages.length === 0 || isStreaming || isGeneratingDoc}
+                            title="Gerar documento estruturado com base na conversa"
+                            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{
+                                borderColor: "oklch(0.60 0.14 240)",
+                                color: "oklch(0.40 0.14 240)",
+                                background: "oklch(0.96 0.04 240)",
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!e.currentTarget.disabled) {
+                                    e.currentTarget.style.background = "oklch(0.90 0.08 240)";
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "oklch(0.96 0.04 240)";
+                            }}
+                        >
+                            {isGeneratingDoc
+                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                : <FileDown className="w-3.5 h-3.5" />
+                            }
+                            Gerar documento
+                        </button>
+                    )}
                 </div>
 
                 {/* Messages area */}
@@ -405,6 +505,19 @@ export default function ChatInterface({
                     )}
                 </div>
 
+                {/* Doc generation error banner */}
+                {docGenerateError && (
+                    <div className="flex-shrink-0 px-4 py-2 bg-red-50 border-b border-red-200 flex items-center justify-between">
+                        <p className="text-xs text-red-700">{docGenerateError}</p>
+                        <button
+                            onClick={() => setDocGenerateError(null)}
+                            className="text-red-500 hover:text-red-700 text-xs ml-3"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
+
                 {/* Input area */}
                 <div className="flex-shrink-0 px-4 py-4 bg-white border-t" style={{ borderColor: "oklch(0.92 0.02 100)" }}>
                     <div className="max-w-3xl mx-auto">
@@ -452,5 +565,16 @@ export default function ChatInterface({
                 </div>
             </div>
         </div>
+
+        {/* Document preview modal (impl. 004) */}
+        <PreviewModal
+            isOpen={docPreviewOpen}
+            onClose={() => setDocPreviewOpen(false)}
+            title={docPreviewTitle}
+            content={docPreviewContent}
+            data={docPreviewData}
+            downloadHandler={handleDocDownload}
+        />
+        </>
     );
 }

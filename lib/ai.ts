@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { DocumentTemplate, DynamicDocumentJson } from "./document-template";
 
 // Initialize OpenAI Client
 const openai = new OpenAI();
@@ -122,5 +123,103 @@ Gere o PUD completo, incluindo Rubrica de Avaliação e Checklist de Autoauditor
     } catch (error) {
         console.error("OpenAI Generation Error:", error);
         throw error;
+    }
+}
+
+// ── Structured Document Generation (impl. 004) ────────────────────────────────
+
+export async function generateStructuredDocument(
+    template: DocumentTemplate,
+    history: { role: "user" | "assistant"; content: string }[],
+    docs: { name: string; text: string }[]
+): Promise<DynamicDocumentJson> {
+    if (!process.env.OPENAI_API_KEY) {
+        throw new Error("OPENAI_API_KEY is not set");
+    }
+
+    const sectionsDescription = template.sections
+        .map((sec) => {
+            const base = `- Key: "${sec.key}" | Rótulo: "${sec.label}" | Tipo: "${sec.type}"\n  Instrução: ${sec.instruction}`;
+            return sec.type === "tabela" && sec.columns?.length
+                ? base + `\n  Colunas: ${sec.columns.join(", ")}`
+                : base;
+        })
+        .join("\n\n");
+
+    const MAX_CHARS_PER_DOC = 8000;
+    const docsContext =
+        docs.length > 0
+            ? `\n\n## DOCUMENTOS DE REFERÊNCIA\n${docs
+                  .map((d) => `\n=== ${d.name} ===\n${d.text.slice(0, MAX_CHARS_PER_DOC)}`)
+                  .join("")}`
+            : "";
+
+    const citationRule =
+        docs.length > 0
+            ? `\n\nCITAÇÕES: Quando usar informação de um documento, registre em "citations": [{ "section": "<key>", "source": "<nome_exato>" }]. Cite apenas fontes reais listadas acima.`
+            : `\n\nCITAÇÕES: Não há documentos. Retorne "citations": [].`;
+
+    const jsonExample: Record<string, unknown> = {};
+    for (const sec of template.sections) {
+        if (sec.type === "texto") jsonExample[sec.key] = { type: "texto", value: "..." };
+        else if (sec.type === "lista") jsonExample[sec.key] = { type: "lista", value: ["...", "..."] };
+        else jsonExample[sec.key] = { type: "tabela", columns: sec.columns ?? [], rows: [Array(sec.columns?.length ?? 1).fill("...")] };
+    }
+
+    const systemPrompt = `Você é um assistente especialista em documentação formal. Com base na conversa fornecida, produza um documento JSON estruturado conforme o template.
+
+## TEMPLATE
+Título: ${template.title || "Documento"}
+
+## SEÇÕES
+${sectionsDescription}
+
+## FORMATO JSON OBRIGATÓRIO
+{
+  "title": "${template.title || "Documento"}",
+  "sections": ${JSON.stringify(jsonExample, null, 2)},
+  "citations": []
+}
+
+Preencha TODAS as seções usando EXATAMENTE as keys definidas. Não omita nenhuma seção.${citationRule}${docsContext}`;
+
+    const historyMessages: OpenAI.Chat.ChatCompletionMessageParam[] = history.map((m) => ({
+        role: m.role,
+        content: m.content,
+    }));
+
+    const attempt = async (): Promise<DynamicDocumentJson> => {
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                { role: "system", content: systemPrompt },
+                ...historyMessages,
+                { role: "user", content: "Com base na conversa acima, gere o documento JSON agora." },
+            ],
+            response_format: { type: "json_object" },
+        });
+
+        const raw = completion.choices[0].message.content;
+        if (!raw) throw new Error("No content from OpenAI");
+
+        const json = JSON.parse(raw) as DynamicDocumentJson;
+
+        const missing = template.sections.filter((s) => !json.sections?.[s.key]);
+        if (missing.length > 0) {
+            throw new Error(`Missing sections: ${missing.map((s) => s.key).join(", ")}`);
+        }
+
+        return json;
+    };
+
+    try {
+        return await attempt();
+    } catch {
+        try {
+            return await attempt();
+        } catch (err) {
+            console.error("generateStructuredDocument failed after retry:", err);
+            throw new Error("STRUCTURED_DOCUMENT_FAILED");
+        }
     }
 }

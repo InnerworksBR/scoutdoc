@@ -7,7 +7,12 @@ export default async function AgentChatPage({ params }: { params: Promise<{ agen
     const supabase = await createClient();
 
     const [{ data: agent }, { data: { user } }] = await Promise.all([
-        supabase.from("agents").select("id, name, description, avatar_color, welcome_message, suggestions").eq("id", agentId).eq("is_active", true).single(),
+        supabase
+            .from("agents")
+            .select("id, name, description, avatar_color, welcome_message, suggestions, produces_document, document_template, document_title")
+            .eq("id", agentId)
+            .eq("is_active", true)
+            .single(),
         supabase.auth.getUser(),
     ]);
 
@@ -32,6 +37,9 @@ export default async function AgentChatPage({ params }: { params: Promise<{ agen
                 conversations={conversations || []}
                 welcomeMessage={agent.welcome_message ?? null}
                 suggestions={Array.isArray(agent.suggestions) ? agent.suggestions as string[] : null}
+                producesDocument={agent.produces_document ?? false}
+                documentTemplate={agent.document_template ?? null}
+                documentTitle={(agent.document_title as string | null) ?? null}
             />
         </div>
     );
