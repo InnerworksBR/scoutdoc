@@ -10,7 +10,7 @@ export default async function AssistantsPage() {
 
     const { data: agents } = await supabase
         .from("agents")
-        .select("id, name, description, avatar_color")
+        .select("id, name, description, avatar_color, avatar_url")
         .eq("is_active", true)
         .order("created_at", { ascending: true });
 
@@ -51,11 +51,18 @@ export default async function AssistantsPage() {
                         {agents.map((agent) => (
                             <Link key={agent.id} href={`/assistants/${agent.id}`}>
                                 <div className="bg-white rounded-xl border border-cream-200 shadow-sm hover:border-azure-300 hover:shadow-lg hover:shadow-azure-100/50 transition-all cursor-pointer group p-6">
-                                    <div
-                                        className="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl mb-4 shadow-md"
-                                        style={{ background: agent.avatar_color || "var(--color-azure-500)" }}
-                                    >
-                                        {agent.name[0].toUpperCase()}
+                                    <div className="w-14 h-14 rounded-full overflow-hidden mb-4 shadow-md flex-shrink-0">
+                                        {agent.avatar_url ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={agent.avatar_url} alt={agent.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div
+                                                className="w-full h-full flex items-center justify-center text-white font-bold text-xl"
+                                                style={{ background: agent.avatar_color || "var(--color-azure-500)" }}
+                                            >
+                                                {agent.name[0].toUpperCase()}
+                                            </div>
+                                        )}
                                     </div>
                                     <h2 className="font-display font-bold text-lg text-scout-900 group-hover:text-azure-700 transition-colors mb-2">
                                         {agent.name}

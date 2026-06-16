@@ -11,7 +11,7 @@ export default async function Dashboard() {
     const [{ data: documents }, { data: agents }, { data: profile }] = await Promise.all([
         supabase.from("documents").select("*").order("created_at", { ascending: false }),
         supabase.from("agents").select("id, name, description, avatar_color").eq("is_active", true),
-        supabase.from("profiles").select("role").eq("id", user.id).single(),
+        supabase.from("profiles").select("role, avatar_url").eq("id", user.id).single(),
     ]);
 
     if (profile?.role === "admin") redirect("/admin");
@@ -23,6 +23,7 @@ export default async function Dashboard() {
         <DashboardLayout
             firstName={capitalizedName}
             userEmail={user.email ?? ""}
+            userAvatarUrl={profile?.avatar_url ?? null}
             documents={documents || []}
             agents={agents || []}
         />

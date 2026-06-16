@@ -1,7 +1,7 @@
 # 006 - Anexo de Imagem no Chat com Visão GPT-4o
 
 > **ID:** 006
-> **Status:** 🟡 Planejada
+> **Status:** 🟢 Concluída
 > **Prioridade:** 🟡 Média
 > **Criada em:** 2026-06-16
 > **Última atualização:** 2026-06-16

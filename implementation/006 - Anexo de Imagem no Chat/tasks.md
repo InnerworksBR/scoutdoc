@@ -2,7 +2,7 @@
 
 > **Implementação:** 006 - Anexo de Imagem no Chat com Visão GPT-4o
 > **Spec:** [spec.md](./spec.md)
-> **Progresso:** 0/9 tarefas concluídas (0%)
+> **Progresso:** 9/9 tarefas concluídas (100%)
 > **Última atualização:** 2026-06-16
 
 ## Legenda
@@ -96,12 +96,12 @@
 
 | Tarefa | Status | Data de Conclusão | Observações |
 | --- | --- | --- | --- |
-| T-001 | ⬜ Pendente | — | Migration `image_url` em `messages` + bucket `agent-chat-images` |
-| T-002 | ⬜ Pendente | — | Aceitar `imageUrl` no body e validar entrada |
-| T-003 | ⬜ Pendente | — | Persistir `image_url` e montar `content` multimodal |
-| T-004 | ⬜ Pendente | — | Utilitário `lib/imageValidation.ts` |
-| T-005 | ⬜ Pendente | — | Endpoint signed URL de upload de imagem |
-| T-006 | ⬜ Pendente | — | Botão de anexo, seleção e preview |
-| T-007 | ⬜ Pendente | — | Upload e envio da imagem em `sendMessage` |
-| T-008 | ⬜ Pendente | — | Render da imagem na bolha e no reload |
-| T-009 | ⬜ Pendente | — | Testes unit/integração/aceitação |
+| T-001 | ✅ Concluída | — | Migration `image_url` em `messages` + bucket `agent-chat-images` |
+| T-002 | ✅ Concluída | — | Aceitar `imageUrl` no body e validar entrada |
+| T-003 | ✅ Concluída | — | Persistir `image_url` e montar `content` multimodal |
+| T-004 | ✅ Concluída | — | Utilitário `lib/imageValidation.ts` |
+| T-005 | ✅ Concluída | — | Endpoint signed URL de upload de imagem |
+| T-006 | ✅ Concluída | — | Botão de anexo, seleção e preview |
+| T-007 | ✅ Concluída | — | Upload e envio da imagem em `sendMessage` |
+| T-008 | ✅ Concluída | — | Render da imagem na bolha e no reload |
+| T-009 | ✅ Concluída | — | Testes unit/integração/aceitação |

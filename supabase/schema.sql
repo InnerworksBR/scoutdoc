@@ -185,3 +185,48 @@ alter table agents
   add column if not exists produces_document boolean not null default false,
   add column if not exists document_template jsonb,
   add column if not exists document_title text;
+
+-- ============================================================
+-- 9. MIGRAÇÃO 005 — Avatar do Agente
+-- ============================================================
+alter table agents
+  add column if not exists avatar_url text;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 2097152, array['image/png', 'image/jpeg', 'image/webp'])
+on conflict (id) do nothing;
+
+-- ============================================================
+-- 10. MIGRAÇÃO 006 — Imagem no Chat
+-- ============================================================
+alter table messages
+  add column if not exists image_url text;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('agent-chat-images', 'agent-chat-images', true, 5242880, array['image/png', 'image/jpeg', 'image/webp'])
+on conflict (id) do nothing;
+
+-- ============================================================
+-- 11. MIGRAÇÃO 007 — Foto de Perfil do Usuário
+-- ============================================================
+alter table profiles
+  add column if not exists avatar_url text,
+  add column if not exists display_name text;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('user-avatars', 'user-avatars', true, 2097152, array['image/png', 'image/jpeg', 'image/webp'])
+on conflict (id) do nothing;
+
+create policy if not exists "user_avatars_insert" on storage.objects
+  for insert with check (
+    bucket_id = 'user-avatars'
+    and auth.role() = 'authenticated'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy if not exists "user_avatars_delete" on storage.objects
+  for delete using (
+    bucket_id = 'user-avatars'
+    and auth.role() = 'authenticated'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );

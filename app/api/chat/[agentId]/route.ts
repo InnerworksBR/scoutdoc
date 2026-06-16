@@ -14,10 +14,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
 
     const { agentId } = await params;
     const body = await req.json();
-    const { message, conversationId } = body as { message: string; conversationId?: string };
+    const { message, conversationId, imageUrl } = body as {
+        message: string;
+        conversationId?: string;
+        imageUrl?: string | null;
+    };
 
-    if (!message?.trim()) {
-        return NextResponse.json({ error: "Mensagem vazia" }, { status: 400 });
+    if (!message?.trim() && !imageUrl) {
+        return NextResponse.json({ error: "Mensagem ou imagem é obrigatória" }, { status: 400 });
     }
 
     // Buscar agente + documentos
@@ -35,13 +39,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
     // Montar ou recuperar conversa
     let convId = conversationId;
     if (!convId) {
+        const title = message?.trim().slice(0, 60) || "Conversa com imagem";
         const { data: conv } = await supabase
             .from("conversations")
-            .insert({
-                user_id: user.id,
-                agent_id: agentId,
-                title: message.slice(0, 60),
-            })
+            .insert({ user_id: user.id, agent_id: agentId, title })
             .select()
             .single();
         convId = conv?.id;
@@ -51,17 +52,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
         return NextResponse.json({ error: "Não foi possível criar conversa" }, { status: 500 });
     }
 
-    // Salvar mensagem do usuário
+    // Salvar mensagem do usuário (com image_url se houver)
     await supabase.from("messages").insert({
         conversation_id: convId,
         role: "user",
-        content: message,
+        content: message?.trim() || "",
+        image_url: imageUrl ?? null,
     });
 
     // Buscar histórico (últimas 20 mensagens)
     const { data: history } = await supabase
         .from("messages")
-        .select("role, content")
+        .select("role, content, image_url")
         .eq("conversation_id", convId)
         .order("created_at", { ascending: true })
         .limit(20);
@@ -84,10 +86,32 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
         ? `${agent.system_prompt}${citationInstruction}${docsContext}`
         : `${agent.system_prompt}\n\nIMPORTANTE: Não há documentos de referência disponíveis nesta sessão. Responda com base no seu conhecimento e NÃO cite fontes ou documentos.`;
 
-    // Chamar OpenAI com streaming
+    // Converter histórico para mensagens OpenAI (suporte multimodal)
+    const buildUserContent = (
+        text: string,
+        imgUrl: string | null,
+    ): string | OpenAI.Chat.ChatCompletionContentPart[] => {
+        if (!imgUrl) return text || " ";
+        const parts: OpenAI.Chat.ChatCompletionContentPart[] = [];
+        if (text) parts.push({ type: "text" as const, text });
+        parts.push({
+            type: "image_url" as const,
+            image_url: { url: imgUrl, detail: "auto" as const },
+        });
+        return parts;
+    };
+
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
         { role: "system", content: systemPrompt },
-        ...(history?.map((m: any) => ({ role: m.role as "user" | "assistant", content: m.content })) || []),
+        ...(history?.map((m: any) => {
+            if (m.role === "user") {
+                return {
+                    role: "user" as const,
+                    content: buildUserContent(m.content, m.image_url ?? null),
+                };
+            }
+            return { role: "assistant" as const, content: m.content as string };
+        }) || []),
     ];
 
     const stream = await openai.chat.completions.create({
@@ -98,7 +122,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
         temperature: 0.7,
     });
 
-    // Stream a resposta para o cliente e acumular para salvar no banco
     const encoder = new TextEncoder();
     let fullResponse = "";
 
@@ -112,7 +135,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
                         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text, conversationId: convId })}\n\n`));
                     }
                 }
-                // Salvar resposta completa no banco
                 await supabase.from("messages").insert({
                     conversation_id: convId,
                     role: "assistant",
@@ -120,7 +142,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
                 });
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, conversationId: convId })}\n\n`));
                 controller.close();
-            } catch (err) {
+            } catch {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Erro ao gerar resposta" })}\n\n`));
                 controller.close();
             }

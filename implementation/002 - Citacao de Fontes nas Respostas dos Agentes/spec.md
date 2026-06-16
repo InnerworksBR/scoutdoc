@@ -1,7 +1,7 @@
 # Citação de Fontes nas Respostas dos Agentes
 
 > **ID:** 002
-> **Status:** 🟡 Planejada
+> **Status:** 🟢 Concluída
 > **Prioridade:** 🔴 Crítica
 > **Criada em:** 2026-06-16
 > **Última atualização:** 2026-06-16

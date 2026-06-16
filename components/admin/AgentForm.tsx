@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Save, Trash2, Plus, X, FileText, ChevronDown } from "lucide-react";
+import { Loader2, Save, Trash2, Plus, X, FileText, ChevronDown, Camera } from "lucide-react";
 import type { DocumentSection, SectionType } from "@/lib/document-template";
+import { validateImageFile, MAX_AVATAR_IMAGE_SIZE } from "@/lib/imageValidation";
 
 const AVATAR_COLORS = [
     "linear-gradient(135deg, #38a169, #3b82f6)",  // Verde → Azul (padrão)
@@ -25,6 +26,7 @@ interface AgentFormProps {
         description?: string;
         system_prompt: string;
         avatar_color: string;
+        avatar_url?: string | null;
         is_active: boolean;
         welcome_message?: string | null;
         suggestions?: string[] | null;
@@ -45,11 +47,16 @@ const EMPTY_SECTION: { key: string; label: string; instruction: string; type: Se
 export default function AgentForm({ agent }: AgentFormProps) {
     const router = useRouter();
     const isEditing = !!agent;
+    const avatarFileRef = useRef<HTMLInputElement>(null);
 
     const [name, setName] = useState(agent?.name || "");
     const [description, setDescription] = useState(agent?.description || "");
     const [systemPrompt, setSystemPrompt] = useState(agent?.system_prompt || "");
     const [avatarColor, setAvatarColor] = useState(agent?.avatar_color || AVATAR_COLORS[0]);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(agent?.avatar_url ?? null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const [avatarError, setAvatarError] = useState<string | null>(null);
     const [isActive, setIsActive] = useState(agent?.is_active ?? true);
     const [welcomeMessage, setWelcomeMessage] = useState(agent?.welcome_message || "");
     const [suggestions, setSuggestions] = useState<string[]>(
@@ -69,6 +76,55 @@ export default function AgentForm({ agent }: AgentFormProps) {
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !agent) return;
+
+        const validationError = validateImageFile(file, MAX_AVATAR_IMAGE_SIZE);
+        if (validationError) {
+            setAvatarError(validationError);
+            return;
+        }
+
+        setAvatarError(null);
+        if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+        setAvatarPreview(URL.createObjectURL(file));
+        setIsUploadingAvatar(true);
+
+        try {
+            const urlRes = await fetch(`/api/admin/agents/${agent.id}/avatar/upload-url`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: file.name, contentType: file.type }),
+            });
+
+            if (!urlRes.ok) {
+                const err = await urlRes.json();
+                throw new Error(err.error || "Erro ao obter URL de upload");
+            }
+
+            const { signedUrl, publicUrl } = await urlRes.json();
+
+            const uploadRes = await fetch(signedUrl, {
+                method: "PUT",
+                body: file,
+                headers: { "Content-Type": file.type },
+            });
+
+            if (!uploadRes.ok) throw new Error("Falha no upload da imagem");
+
+            setAvatarUrl(publicUrl);
+            setAvatarPreview(null);
+        } catch (err: any) {
+            setAvatarError(err.message);
+            if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+            setAvatarPreview(null);
+        } finally {
+            setIsUploadingAvatar(false);
+            if (avatarFileRef.current) avatarFileRef.current.value = "";
+        }
+    };
 
     const addSuggestion = () => {
         const trimmed = newSuggestion.trim();
@@ -124,6 +180,7 @@ export default function AgentForm({ agent }: AgentFormProps) {
                     description,
                     system_prompt: systemPrompt,
                     avatar_color: avatarColor,
+                    avatar_url: avatarUrl,
                     is_active: isActive,
                     welcome_message: welcomeMessage.trim() || null,
                     suggestions: suggestions.map((s) => s.trim()).filter(Boolean),
@@ -228,6 +285,71 @@ export default function AgentForm({ agent }: AgentFormProps) {
                             ))}
                         </div>
                     </div>
+
+                    {/* Avatar Photo (edit mode only) */}
+                    {isEditing && (
+                        <div className="space-y-2 border-t border-cream-200 pt-5">
+                            <Label>Foto do Agente</Label>
+                            <div className="flex items-center gap-4">
+                                <div className="flex-shrink-0">
+                                    {(avatarPreview || avatarUrl) ? (
+                                        <img
+                                            src={avatarPreview || avatarUrl!}
+                                            alt="Avatar"
+                                            className="w-16 h-16 rounded-full object-cover border-2 border-cream-200 shadow-sm"
+                                        />
+                                    ) : (
+                                        <div
+                                            className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-sm"
+                                            style={{ background: avatarColor }}
+                                        >
+                                            {(name[0] || "A").toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex-1 space-y-2">
+                                    <input
+                                        ref={avatarFileRef}
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        className="hidden"
+                                        onChange={handleAvatarChange}
+                                    />
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => avatarFileRef.current?.click()}
+                                            disabled={isUploadingAvatar}
+                                            className="border-cream-300 text-scout-600 hover:bg-cream-50"
+                                        >
+                                            {isUploadingAvatar
+                                                ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                                : <Camera className="w-3.5 h-3.5 mr-1.5" />
+                                            }
+                                            {avatarUrl ? "Alterar foto" : "Adicionar foto"}
+                                        </Button>
+                                        {avatarUrl && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => { setAvatarUrl(null); setAvatarPreview(null); }}
+                                                className="border-red-200 text-red-500 hover:bg-red-50"
+                                                title="Remover foto"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {avatarError && <p className="text-xs text-red-600">{avatarError}</p>}
+                                    <p className="text-xs text-scout-400">PNG, JPG ou WebP · Máximo 2 MB · A foto substitui a inicial colorida.</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Status */}
                     <div className="flex items-center gap-3">

@@ -2,10 +2,11 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Compass, Bot, FileText, Plus, Search, ArrowRight, MessageSquare } from "lucide-react";
+import { Compass, Bot, FileText, Plus, ArrowRight, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signout } from "@/app/login/actions";
 import DashboardClient from "@/components/DashboardClient";
+import UserAvatar from "@/components/UserAvatar";
 
 interface Agent {
     id: string;
@@ -17,11 +18,12 @@ interface Agent {
 interface DashboardLayoutProps {
     firstName: string;
     userEmail: string;
+    userAvatarUrl?: string | null;
     documents: any[];
     agents: Agent[];
 }
 
-export default function DashboardLayout({ firstName, userEmail, documents, agents }: DashboardLayoutProps) {
+export default function DashboardLayout({ firstName, userEmail, userAvatarUrl, documents, agents }: DashboardLayoutProps) {
     const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 
     return (
@@ -56,12 +58,14 @@ export default function DashboardLayout({ firstName, userEmail, documents, agent
                             <span className="text-xs font-semibold text-white/80">{userEmail}</span>
                             <span className="text-[10px] text-white/40">UEB Account</span>
                         </div>
-                        <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ring-2 shadow"
-                            style={{ background: "oklch(0.38 0.17 145)" }}
-                        >
-                            {userEmail[0].toUpperCase()}
-                        </div>
+                        <Link href="/profile" title="Editar perfil">
+                            <UserAvatar
+                                avatarUrl={userAvatarUrl}
+                                email={userEmail}
+                                size={32}
+                                className="ring-2 ring-white/30 shadow hover:ring-white/60 transition-all"
+                            />
+                        </Link>
                         <form action={signout}>
                             <button className="text-xs text-white/50 hover:text-white/90 transition-colors px-2 py-1">
                                 Sair

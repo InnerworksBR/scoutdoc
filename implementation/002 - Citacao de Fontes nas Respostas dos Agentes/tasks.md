@@ -2,7 +2,7 @@
 
 > **Implementação:** 002 - Citação de Fontes nas Respostas dos Agentes
 > **Spec:** [spec.md](./spec.md)
-> **Progresso:** 0/9 tarefas concluídas (0%)
+> **Progresso:** 7/9 tarefas concluídas (78%)
 > **Última atualização:** 2026-06-16
 
 ---
@@ -104,15 +104,15 @@
 
 | Tarefa | Status | Data de Conclusão | Observações |
 |--------|--------|-------------------|-------------|
-| T-001  | ⬜ Pendente | — | — |
-| T-002  | ⬜ Pendente | — | — |
-| T-003  | ⬜ Pendente | — | — |
-| T-004  | ⬜ Pendente | — | — |
-| T-005  | ⬜ Pendente | — | — |
-| T-006  | ⬜ Pendente | — | — |
-| T-007  | ⬜ Pendente | — | — |
-| T-008  | ⬜ Pendente | — | — |
-| T-009  | ⬜ Pendente | — | — |
+| T-001  | ✅ Concluída | 2026-06-16 | Rótulos [Fonte: name] no docsContext + limite 8k chars/doc |
+| T-002  | ✅ Concluída | 2026-06-16 | Instrução de citação + caso sem documentos no systemPrompt |
+| T-003  | ✅ Concluída | 2026-06-16 | lib/citations.ts — parseCitations() com tolerância a malformados |
+| T-004  | ✅ Concluída | 2026-06-16 | CitationBadge.tsx + ReferenceFooter, paleta gold-* |
+| T-005  | ✅ Concluída | 2026-06-16 | AssistantContent usa parseCitations no ChatInterface |
+| T-006  | ✅ Concluída | 2026-06-16 | SYSTEM_PROMPT do PUD: source anti-alucinação + N/A |
+| T-007  | ✅ Concluída | 2026-06-16 | Decisão: manter mergePages:true; nº de página é débito técnico |
+| T-008  | ⬜ Pendente | — | Sem suíte de testes configurada no projeto |
+| T-009  | ⬜ Pendente | — | Roteiro manual de aceitação pendente |
 
 ---
 

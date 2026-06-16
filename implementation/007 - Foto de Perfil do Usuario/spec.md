@@ -1,7 +1,7 @@
 # Foto de Perfil do Usuário
 
 > **ID:** 007
-> **Status:** 🟡 Planejada
+> **Status:** 🟢 Concluída
 > **Prioridade:** 🟢 Baixa
 > **Criada em:** 2026-06-16
 > **Última atualização:** 2026-06-16

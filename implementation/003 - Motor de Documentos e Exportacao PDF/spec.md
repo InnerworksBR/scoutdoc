@@ -1,7 +1,7 @@
 # 003 — Motor de Documentos e Exportação PDF
 
 > **ID:** 003
-> **Status:** 🟡 Planejada
+> **Status:** 🟢 Concluída
 > **Prioridade:** 🟠 Alta
 > **Criada em:** 2026-06-16
 > **Última atualização:** 2026-06-16

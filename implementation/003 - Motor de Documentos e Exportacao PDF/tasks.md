@@ -2,7 +2,7 @@
 
 > **Implementação:** 003 — Motor de Documentos e Exportação PDF
 > **Spec:** [./spec.md](./spec.md)
-> **Progresso:** 0/8 (0%)
+> **Progresso:** 6/8 (75%)
 > **Última atualização:** 2026-06-16
 
 ---
@@ -105,11 +105,11 @@
 
 | Tarefa | Descrição | Fase | Status | Estimativa |
 |---|---|---|---|---|
-| T-001 | Instalar e configurar `pdfkit` | Setup / Lib | ⬜ Pendente | 0,5h |
-| T-002 | (Opcional) Modelo de seções DocumentEngine | Geração PDF | ⬜ Pendente | 1,5h |
-| T-003 | Implementar `PdfGenerator.generate` | Geração PDF | ⬜ Pendente | 4h |
-| T-004 | Esquema Zod de validação | Rota API | ⬜ Pendente | 0,75h |
-| T-005 | Rota `POST /api/download/pdf` | Rota API | ⬜ Pendente | 1h |
-| T-006 | Botão "Baixar .PDF" no `PreviewModal` | Frontend | ⬜ Pendente | 1h |
+| T-001 | Instalar e configurar `pdfkit` | Setup / Lib | ✅ Concluída | 0,5h |
+| T-002 | (Opcional) Modelo de seções DocumentEngine | Geração PDF | ✅ Concluída | 1,5h |
+| T-003 | Implementar `PdfGenerator.generate` | Geração PDF | ✅ Concluída | 4h |
+| T-004 | Esquema Zod de validação | Rota API | ✅ Concluída | 0,75h |
+| T-005 | Rota `POST /api/download/pdf` | Rota API | ✅ Concluída | 1h |
+| T-006 | Botão "Baixar .PDF" no `PreviewModal` | Frontend | ✅ Concluída | 1h |
 | T-007 | Testes unitários e de integração | Testes | ⬜ Pendente | 2h |
 | T-008 | Validação manual / regressão / identidade visual | Testes | ⬜ Pendente | 1h |

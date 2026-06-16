@@ -1,14 +1,29 @@
 import type { NextConfig } from "next";
 
+let supabaseHostname: string | null = null;
+try {
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (rawUrl) supabaseHostname = new URL(rawUrl).hostname;
+} catch {}
+
 const nextConfig: NextConfig = {
-  experimental: {
-    serverActions: {
-      // base64 de 50MB ~= 68MB — limite generoso para cobrir a codificação
-      bodySizeLimit: "70mb",
+    experimental: {
+        serverActions: {
+            bodySizeLimit: "70mb",
+        },
     },
-  },
-  // pdfkit carrega assets internos de fonte em runtime Node — não pode ser bundled pelo webpack
-  serverExternalPackages: ["pdfkit"],
+    serverExternalPackages: ["pdfkit"],
+    ...(supabaseHostname && {
+        images: {
+            remotePatterns: [
+                {
+                    protocol: "https",
+                    hostname: supabaseHostname,
+                    pathname: "/storage/v1/object/public/**",
+                },
+            ],
+        },
+    }),
 };
 
 export default nextConfig;

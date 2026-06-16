@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Plus, MessageSquare, Loader2, ChevronLeft, Compass, FileDown } from "lucide-react";
+import { Send, Plus, MessageSquare, Loader2, ChevronLeft, Compass, FileDown, Paperclip, X } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -10,11 +10,15 @@ import { parseCitations } from "@/lib/citations";
 import PreviewModal from "@/components/PreviewModal";
 import { formatPreviewContent } from "@/lib/document-template";
 import type { DocumentTemplate } from "@/lib/document-template";
+import AgentAvatar from "@/components/AgentAvatar";
+import UserAvatar from "@/components/UserAvatar";
+import { validateImageFile, MAX_CHAT_IMAGE_SIZE } from "@/lib/imageValidation";
 
 interface Message {
     id?: string;
     role: "user" | "assistant";
     content: string;
+    imageUrl?: string | null;
     pending?: boolean;
 }
 
@@ -29,7 +33,9 @@ interface ChatInterfaceProps {
     agentName: string;
     agentDescription?: string;
     agentColor: string;
+    agentAvatarUrl?: string | null;
     userEmail?: string;
+    userAvatarUrl?: string | null;
     conversations: Conversation[];
     welcomeMessage?: string | null;
     suggestions?: string[] | null;
@@ -71,7 +77,9 @@ export default function ChatInterface({
     agentName,
     agentDescription,
     agentColor,
+    agentAvatarUrl,
     userEmail,
+    userAvatarUrl,
     conversations: initialConversations,
     welcomeMessage,
     suggestions: agentSuggestions,
@@ -90,6 +98,7 @@ export default function ChatInterface({
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const supabase = createClient();
 
     // Document generation state (impl. 004)
@@ -100,23 +109,42 @@ export default function ChatInterface({
     const [docPreviewData, setDocPreviewData] = useState<any>(null);
     const [docGenerateError, setDocGenerateError] = useState<string | null>(null);
 
+    // Image attachment state (impl. 006)
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
+    const clearSelectedImage = useCallback(() => {
+        setSelectedImage(null);
+        if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+        setImagePreviewUrl(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    }, [imagePreviewUrl]);
+
     const loadConversation = useCallback(async (convId: string) => {
         const { data } = await supabase
             .from("messages")
-            .select("id, role, content")
+            .select("id, role, content, image_url")
             .eq("conversation_id", convId)
             .order("created_at", { ascending: true });
-        setMessages(data || []);
+        setMessages((data || []).map((m: any) => ({
+            id: m.id,
+            role: m.role,
+            content: m.content,
+            imageUrl: m.image_url ?? null,
+        })));
         setConversationId(convId);
     }, [supabase]);
 
     const startNewConversation = () => {
         setMessages([]);
         setConversationId(null);
+        clearSelectedImage();
         setTimeout(() => inputRef.current?.focus(), 50);
     };
 
@@ -174,15 +202,64 @@ export default function ChatInterface({
         document.body.removeChild(a);
     };
 
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const validationError = validateImageFile(file, MAX_CHAT_IMAGE_SIZE);
+        if (validationError) {
+            setImageUploadError(validationError);
+            return;
+        }
+
+        setImageUploadError(null);
+        if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+        setSelectedImage(file);
+        setImagePreviewUrl(URL.createObjectURL(file));
+    };
+
     const sendMessage = async (text?: string) => {
         const msg = (text ?? input).trim();
-        if (!msg || isStreaming) return;
+        if ((!msg && !selectedImage) || isStreaming) return;
+
+        let uploadedImageUrl: string | null = null;
+
+        if (selectedImage) {
+            setIsUploadingImage(true);
+            try {
+                const urlRes = await fetch(`/api/chat/${agentId}/upload-url`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: selectedImage.name, contentType: selectedImage.type }),
+                });
+                if (!urlRes.ok) {
+                    const err = await urlRes.json();
+                    throw new Error(err.error || "Erro ao obter URL de upload");
+                }
+                const { signedUrl, publicUrl } = await urlRes.json();
+
+                const uploadRes = await fetch(signedUrl, {
+                    method: "PUT",
+                    body: selectedImage,
+                    headers: { "Content-Type": selectedImage.type },
+                });
+                if (!uploadRes.ok) throw new Error("Falha no upload da imagem");
+
+                uploadedImageUrl = publicUrl;
+            } catch (err: any) {
+                setImageUploadError(err.message ?? "Erro ao enviar imagem");
+                setIsUploadingImage(false);
+                return;
+            }
+            setIsUploadingImage(false);
+            clearSelectedImage();
+        }
 
         setInput("");
         setIsStreaming(true);
         setMessages((prev) => [
             ...prev,
-            { role: "user", content: msg },
+            { role: "user", content: msg, imageUrl: uploadedImageUrl },
             { role: "assistant", content: "", pending: true },
         ]);
 
@@ -190,7 +267,7 @@ export default function ChatInterface({
             const res = await fetch(`/api/chat/${agentId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: msg, conversationId }),
+                body: JSON.stringify({ message: msg, conversationId, imageUrl: uploadedImageUrl }),
             });
 
             if (!res.ok) throw new Error();
@@ -218,7 +295,7 @@ export default function ChatInterface({
                             setConversationId(data.conversationId);
                             setConversations((prev) => {
                                 if (prev.find((c) => c.id === data.conversationId)) return prev;
-                                return [{ id: data.conversationId, title: msg.slice(0, 60), created_at: new Date().toISOString() }, ...prev];
+                                return [{ id: data.conversationId, title: msg.slice(0, 60) || "Conversa com imagem", created_at: new Date().toISOString() }, ...prev];
                             });
                         }
                     } catch { /* ignore */ }
@@ -235,8 +312,6 @@ export default function ChatInterface({
             inputRef.current?.focus();
         }
     };
-
-    const userInitial = userEmail?.[0]?.toUpperCase() ?? "U";
 
     return (
         <>
@@ -329,12 +404,13 @@ export default function ChatInterface({
                     {/* Agent info at bottom */}
                     <div className="px-4 py-3 border-t" style={{ borderColor: "oklch(0.22 0.06 145)" }}>
                         <div className="flex items-center gap-2.5">
-                            <div
-                                className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 ring-2 ring-white/10"
-                                style={{ background: agentColor }}
-                            >
-                                {agentName[0].toUpperCase()}
-                            </div>
+                            <AgentAvatar
+                                name={agentName}
+                                avatarColor={agentColor}
+                                avatarUrl={agentAvatarUrl}
+                                size={28}
+                                className="ring-2 ring-white/10"
+                            />
                             <div className="min-w-0">
                                 <p className="text-xs font-semibold truncate text-white">{agentName}</p>
                                 <p className="text-[10px]" style={{ color: "oklch(0.50 0.05 145)" }}>Assistente UEB</p>
@@ -357,12 +433,13 @@ export default function ChatInterface({
                         <ChevronLeft className={cn("w-4 h-4 transition-transform duration-300", !sidebarOpen && "rotate-180")} />
                     </button>
                     <div className="h-5 w-px bg-cream-200" />
-                    <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0"
-                        style={{ background: agentColor }}
-                    >
-                        {agentName[0].toUpperCase()}
-                    </div>
+                    <AgentAvatar
+                        name={agentName}
+                        avatarColor={agentColor}
+                        avatarUrl={agentAvatarUrl}
+                        size={32}
+                        className="shadow-sm"
+                    />
                     <div className="flex-1 min-w-0">
                         <p className="font-display font-bold text-scout-900 text-sm leading-tight truncate">{agentName}</p>
                         {agentDescription && (
@@ -410,12 +487,14 @@ export default function ChatInterface({
                         /* Empty state */
                         <div className="flex flex-col items-center justify-center h-full px-6 text-center">
                             <div className="mb-6 relative">
-                                <div
-                                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-xl"
-                                    style={{ background: `linear-gradient(135deg, ${agentColor}, oklch(0.48 0.20 240))` }}
-                                >
-                                    {agentName[0].toUpperCase()}
-                                </div>
+                                <AgentAvatar
+                                    name={agentName}
+                                    avatarColor={`linear-gradient(135deg, ${agentColor}, oklch(0.48 0.20 240))`}
+                                    avatarUrl={agentAvatarUrl}
+                                    size={80}
+                                    rounded="2xl"
+                                    className="shadow-xl"
+                                />
                                 <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-scout-500 rounded-full flex items-center justify-center ring-2 ring-white">
                                     <span className="text-white text-[10px]">✓</span>
                                 </div>
@@ -449,12 +528,14 @@ export default function ChatInterface({
 
                                     {/* Assistant avatar */}
                                     {msg.role === "assistant" && (
-                                        <div
-                                            className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0 mt-0.5 shadow-sm"
-                                            style={{ background: agentColor }}
-                                        >
-                                            {agentName[0].toUpperCase()}
-                                        </div>
+                                        <AgentAvatar
+                                            name={agentName}
+                                            avatarColor={agentColor}
+                                            avatarUrl={agentAvatarUrl}
+                                            size={32}
+                                            rounded="xl"
+                                            className="mt-0.5 shadow-sm"
+                                        />
                                     )}
 
                                     {/* Bubble */}
@@ -474,7 +555,17 @@ export default function ChatInterface({
                                             className="max-w-[72%] px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed text-white font-medium shadow-sm"
                                             style={{ background: "oklch(0.38 0.17 145)" }}
                                         >
-                                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                                            {msg.imageUrl && (
+                                                <a href={msg.imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img
+                                                        src={msg.imageUrl}
+                                                        alt="Imagem anexada"
+                                                        className="max-w-full max-h-48 rounded-lg object-cover"
+                                                    />
+                                                </a>
+                                            )}
+                                            {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
                                         </div>
                                     ) : (
                                         <div
@@ -491,12 +582,13 @@ export default function ChatInterface({
 
                                     {/* User avatar */}
                                     {msg.role === "user" && (
-                                        <div
-                                            className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5 shadow-sm"
-                                            style={{ background: "oklch(0.28 0.14 145)" }}
-                                        >
-                                            {userInitial}
-                                        </div>
+                                        <UserAvatar
+                                            avatarUrl={userAvatarUrl}
+                                            email={userEmail}
+                                            size={32}
+                                            rounded="xl"
+                                            className="mt-0.5 shadow-sm"
+                                        />
                                     )}
                                 </div>
                             ))}
@@ -505,26 +597,68 @@ export default function ChatInterface({
                     )}
                 </div>
 
-                {/* Doc generation error banner */}
+                {/* Error banners */}
                 {docGenerateError && (
                     <div className="flex-shrink-0 px-4 py-2 bg-red-50 border-b border-red-200 flex items-center justify-between">
                         <p className="text-xs text-red-700">{docGenerateError}</p>
-                        <button
-                            onClick={() => setDocGenerateError(null)}
-                            className="text-red-500 hover:text-red-700 text-xs ml-3"
-                        >
-                            ✕
-                        </button>
+                        <button onClick={() => setDocGenerateError(null)} className="text-red-500 hover:text-red-700 text-xs ml-3">✕</button>
+                    </div>
+                )}
+                {imageUploadError && (
+                    <div className="flex-shrink-0 px-4 py-2 bg-red-50 border-b border-red-200 flex items-center justify-between">
+                        <p className="text-xs text-red-700">{imageUploadError}</p>
+                        <button onClick={() => setImageUploadError(null)} className="text-red-500 hover:text-red-700 text-xs ml-3">✕</button>
+                    </div>
+                )}
+
+                {/* Image preview strip */}
+                {imagePreviewUrl && (
+                    <div className="flex-shrink-0 px-4 pt-3 bg-white border-t" style={{ borderColor: "oklch(0.92 0.02 100)" }}>
+                        <div className="max-w-3xl mx-auto">
+                            <div className="relative inline-block">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    src={imagePreviewUrl}
+                                    alt="Imagem selecionada"
+                                    className="h-20 w-20 object-cover rounded-lg border border-cream-200"
+                                />
+                                <button
+                                    onClick={clearSelectedImage}
+                                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white border border-cream-300 rounded-full flex items-center justify-center shadow-sm hover:bg-red-50 transition-colors"
+                                    aria-label="Remover imagem"
+                                >
+                                    <X className="w-3 h-3 text-scout-500" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 
                 {/* Input area */}
-                <div className="flex-shrink-0 px-4 py-4 bg-white border-t" style={{ borderColor: "oklch(0.92 0.02 100)" }}>
+                <div className={cn("flex-shrink-0 px-4 py-4 bg-white", !imagePreviewUrl && "border-t")} style={{ borderColor: "oklch(0.92 0.02 100)" }}>
                     <div className="max-w-3xl mx-auto">
                         <div
-                            className="flex items-end gap-3 bg-white rounded-2xl border px-4 py-3 shadow-sm focus-within:border-scout-400 focus-within:shadow-md transition-all duration-200"
+                            className="flex items-end gap-2 bg-white rounded-2xl border px-3 py-3 shadow-sm focus-within:border-scout-400 focus-within:shadow-md transition-all duration-200"
                             style={{ borderColor: "oklch(0.85 0.03 100)" }}
                         >
+                            {/* Attachment button */}
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp"
+                                className="hidden"
+                                onChange={handleImageSelect}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isStreaming || isUploadingImage}
+                                className="flex-shrink-0 p-1.5 text-scout-400 hover:text-scout-600 hover:bg-cream-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                title="Anexar imagem"
+                            >
+                                <Paperclip className="w-4 h-4" />
+                            </button>
+
                             <textarea
                                 ref={inputRef}
                                 value={input}
@@ -541,17 +675,21 @@ export default function ChatInterface({
                                 }}
                                 placeholder="Faça sua pergunta sobre metodologia escoteira…"
                                 rows={1}
-                                disabled={isStreaming}
+                                disabled={isStreaming || isUploadingImage}
                                 className="flex-1 bg-transparent text-sm text-scout-800 placeholder-scout-400 resize-none focus:outline-none disabled:opacity-50 leading-relaxed"
                                 style={{ maxHeight: "120px" }}
                             />
                             <button
                                 onClick={() => sendMessage()}
-                                disabled={isStreaming || !input.trim()}
+                                disabled={isStreaming || isUploadingImage || (!input.trim() && !selectedImage)}
                                 className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-                                style={{ background: isStreaming || !input.trim() ? "oklch(0.75 0.05 145)" : "oklch(0.38 0.17 145)" }}
+                                style={{
+                                    background: (isStreaming || isUploadingImage || (!input.trim() && !selectedImage))
+                                        ? "oklch(0.75 0.05 145)"
+                                        : "oklch(0.38 0.17 145)",
+                                }}
                             >
-                                {isStreaming
+                                {isStreaming || isUploadingImage
                                     ? <Loader2 className="w-4 h-4 animate-spin" />
                                     : <Send className="w-4 h-4" />
                                 }
