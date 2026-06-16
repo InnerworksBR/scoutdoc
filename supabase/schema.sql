@@ -217,14 +217,16 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values ('user-avatars', 'user-avatars', true, 2097152, array['image/png', 'image/jpeg', 'image/webp'])
 on conflict (id) do nothing;
 
-create policy if not exists "user_avatars_insert" on storage.objects
+drop policy if exists "user_avatars_insert" on storage.objects;
+create policy "user_avatars_insert" on storage.objects
   for insert with check (
     bucket_id = 'user-avatars'
     and auth.role() = 'authenticated'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
-create policy if not exists "user_avatars_delete" on storage.objects
+drop policy if exists "user_avatars_delete" on storage.objects;
+create policy "user_avatars_delete" on storage.objects
   for delete using (
     bucket_id = 'user-avatars'
     and auth.role() = 'authenticated'
