@@ -53,7 +53,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         return NextResponse.json({ error: "suggestions deve ser um array de strings" }, { status: 400 });
     }
 
-    if (produces_document) {
+    // Modo livre é o padrão: template é opcional. Só valida se houver um informado.
+    if (produces_document && document_template) {
         const tplParsed = documentTemplateSchema.safeParse(document_template);
         if (!tplParsed.success) {
             return NextResponse.json(

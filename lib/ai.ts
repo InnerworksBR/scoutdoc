@@ -126,6 +126,62 @@ Gere o PUD completo, incluindo Rubrica de Avaliação e Checklist de Autoauditor
     }
 }
 
+// ── Free-form Document Generation (impl. 009 — dirigido pelo system prompt) ───
+
+/**
+ * Gera um documento completo em Markdown seguindo as instruções do próprio agente
+ * (system prompt) e a conversa atual. O Markdown é depois convertido em PDF/DOCX.
+ */
+export async function generateFreeformDocument(
+    agentSystemPrompt: string,
+    history: { role: "user" | "assistant"; content: string }[],
+    docs: { name: string; text: string }[],
+    title?: string
+): Promise<string> {
+    if (!process.env.OPENAI_API_KEY) {
+        throw new Error("OPENAI_API_KEY is not set");
+    }
+
+    const MAX_CHARS_PER_DOC = 8000;
+    const docsContext =
+        docs.length > 0
+            ? `\n\n## DOCUMENTOS DE REFERÊNCIA\n${docs
+                  .map((d) => `\n=== ${d.name} ===\n${d.text.slice(0, MAX_CHARS_PER_DOC)}`)
+                  .join("")}`
+            : "";
+
+    const systemPrompt = `${agentSystemPrompt}
+
+## TAREFA: GERAR DOCUMENTO FINAL
+Com base em TODA a conversa acima e seguindo rigorosamente as suas instruções de especialista, produza um documento final completo, formal e bem estruturado em **Markdown**.
+
+Regras de formatação:
+- Comece com um título de nível 1 (uma linha "# Título do Documento").
+- Use "##" e "###" para seções e subseções.
+- Use listas com "-" e tabelas em Markdown quando fizer sentido.
+- Entregue apenas o documento pronto — sem frases como "aqui está" ou comentários fora do documento.
+${title ? `- Título sugerido: "${title}".` : ""}${docsContext}`;
+
+    const historyMessages: OpenAI.Chat.ChatCompletionMessageParam[] = history.map((m) => ({
+        role: m.role,
+        content: m.content,
+    }));
+
+    const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+            { role: "system", content: systemPrompt },
+            ...historyMessages,
+            { role: "user", content: "Gere agora o documento final completo em Markdown, com base em toda a conversa acima." },
+        ],
+        temperature: 0.5,
+    });
+
+    const md = completion.choices[0].message.content?.trim();
+    if (!md) throw new Error("FREEFORM_DOCUMENT_FAILED");
+    return md;
+}
+
 // ── Structured Document Generation (impl. 004) ────────────────────────────────
 
 export async function generateStructuredDocument(

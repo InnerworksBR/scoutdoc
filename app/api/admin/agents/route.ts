@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "suggestions deve ser um array de strings" }, { status: 400 });
     }
 
-    // Validate document_template when produces_document is true
-    if (produces_document) {
+    // Modo livre é o padrão: template é opcional. Só valida se houver um informado.
+    if (produces_document && document_template) {
         const tplParsed = documentTemplateSchema.safeParse(document_template);
         if (!tplParsed.success) {
             return NextResponse.json(
