@@ -18,15 +18,19 @@ create table if not exists documents (
 
 alter table documents enable row level security;
 
+drop policy if exists "Users can view their own documents" on documents;
 create policy "Users can view their own documents" on documents
   for select using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert their own documents" on documents;
 create policy "Users can insert their own documents" on documents
   for insert with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update their own documents" on documents;
 create policy "Users can update their own documents" on documents
   for update using (auth.uid() = user_id);
 
+drop policy if exists "Users can delete their own documents" on documents;
 create policy "Users can delete their own documents" on documents
   for delete using (auth.uid() = user_id);
 
@@ -44,13 +48,16 @@ create table if not exists profiles (
 alter table profiles enable row level security;
 
 -- Usuário vê/edita apenas seu próprio perfil
+drop policy if exists "profiles_self_select" on profiles;
 create policy "profiles_self_select" on profiles
   for select using (auth.uid() = id);
 
+drop policy if exists "profiles_self_update" on profiles;
 create policy "profiles_self_update" on profiles
   for update using (auth.uid() = id);
 
 -- Admin pode ler todos os perfis
+drop policy if exists "profiles_admin_all" on profiles;
 create policy "profiles_admin_all" on profiles
   for all using (
     exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
@@ -90,10 +97,12 @@ create table if not exists agents (
 alter table agents enable row level security;
 
 -- Usuários autenticados podem ler agentes ativos
+drop policy if exists "agents_read_active" on agents;
 create policy "agents_read_active" on agents
   for select using (auth.role() = 'authenticated' and is_active = true);
 
 -- Admin pode fazer tudo com agentes
+drop policy if exists "agents_admin_all" on agents;
 create policy "agents_admin_all" on agents
   for all using (
     exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
@@ -116,10 +125,12 @@ create table if not exists agent_documents (
 alter table agent_documents enable row level security;
 
 -- Usuários autenticados podem ler documentos
+drop policy if exists "agent_docs_read" on agent_documents;
 create policy "agent_docs_read" on agent_documents
   for select using (auth.role() = 'authenticated');
 
 -- Admin pode fazer tudo
+drop policy if exists "agent_docs_admin_all" on agent_documents;
 create policy "agent_docs_admin_all" on agent_documents
   for all using (
     exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
@@ -141,6 +152,7 @@ create table if not exists conversations (
 alter table conversations enable row level security;
 
 -- Usuário vê apenas suas próprias conversas
+drop policy if exists "conversations_self" on conversations;
 create policy "conversations_self" on conversations
   for all using (auth.uid() = user_id);
 
@@ -161,6 +173,7 @@ create table if not exists messages (
 alter table messages enable row level security;
 
 -- Usuário acessa mensagens apenas das suas conversas
+drop policy if exists "messages_self" on messages;
 create policy "messages_self" on messages
   for all using (
     exists (
