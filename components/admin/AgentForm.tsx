@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Save, Trash2 } from "lucide-react";
+import { Loader2, Save, Trash2, Plus, X } from "lucide-react";
 
 const AVATAR_COLORS = [
     "linear-gradient(135deg, #38a169, #3b82f6)",  // Verde → Azul (padrão)
@@ -25,6 +25,8 @@ interface AgentFormProps {
         system_prompt: string;
         avatar_color: string;
         is_active: boolean;
+        welcome_message?: string | null;
+        suggestions?: string[] | null;
     };
 }
 
@@ -37,9 +39,25 @@ export default function AgentForm({ agent }: AgentFormProps) {
     const [systemPrompt, setSystemPrompt] = useState(agent?.system_prompt || "");
     const [avatarColor, setAvatarColor] = useState(agent?.avatar_color || AVATAR_COLORS[0]);
     const [isActive, setIsActive] = useState(agent?.is_active ?? true);
+    const [welcomeMessage, setWelcomeMessage] = useState(agent?.welcome_message || "");
+    const [suggestions, setSuggestions] = useState<string[]>(
+        Array.isArray(agent?.suggestions) ? agent.suggestions : []
+    );
+    const [newSuggestion, setNewSuggestion] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const addSuggestion = () => {
+        const trimmed = newSuggestion.trim();
+        if (!trimmed || suggestions.length >= 6) return;
+        setSuggestions((prev) => [...prev, trimmed]);
+        setNewSuggestion("");
+    };
+
+    const removeSuggestion = (index: number) => {
+        setSuggestions((prev) => prev.filter((_, i) => i !== index));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,7 +71,15 @@ export default function AgentForm({ agent }: AgentFormProps) {
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, description, system_prompt: systemPrompt, avatar_color: avatarColor, is_active: isActive }),
+                body: JSON.stringify({
+                    name,
+                    description,
+                    system_prompt: systemPrompt,
+                    avatar_color: avatarColor,
+                    is_active: isActive,
+                    welcome_message: welcomeMessage.trim() || null,
+                    suggestions: suggestions.map((s) => s.trim()).filter(Boolean),
+                }),
             });
 
             if (!res.ok) {
@@ -164,6 +190,80 @@ export default function AgentForm({ agent }: AgentFormProps) {
                             <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isActive ? "translate-x-5" : "translate-x-0"}`} />
                         </button>
                         <span className="text-xs text-scout-500">{isActive ? "Visível para usuários" : "Oculto"}</span>
+                    </div>
+
+                    {/* Welcome Message */}
+                    <div className="space-y-2 border-t border-cream-200 pt-5">
+                        <Label htmlFor="welcome_message">
+                            Mensagem de Boas-vindas
+                            <span className="ml-2 text-xs text-scout-400 font-normal">opcional</span>
+                        </Label>
+                        <textarea
+                            id="welcome_message"
+                            value={welcomeMessage}
+                            onChange={(e) => setWelcomeMessage(e.target.value)}
+                            rows={3}
+                            placeholder="Olá! Sou o especialista em formação escoteira. Como posso ajudar você hoje?"
+                            className="w-full px-3 py-2 rounded-lg border border-cream-300 bg-cream-50 text-sm focus:outline-none focus:ring-2 focus:ring-scout-500 focus:border-transparent resize-y"
+                        />
+                        <p className="text-xs text-scout-400">
+                            Exibida no chat antes da primeira mensagem. Deixe vazio para usar o comportamento padrão.
+                        </p>
+                    </div>
+
+                    {/* Suggestions Editor */}
+                    <div className="space-y-2">
+                        <Label>
+                            Sugestões de Pergunta
+                            <span className="ml-2 text-xs text-scout-400 font-normal">
+                                {suggestions.length}/6
+                            </span>
+                        </Label>
+
+                        {suggestions.length > 0 && (
+                            <div className="space-y-1.5">
+                                {suggestions.map((s, i) => (
+                                    <div key={i} className="flex items-center gap-2 bg-cream-50 border border-cream-200 rounded-lg px-3 py-2">
+                                        <span className="flex-1 text-sm text-scout-700">{s}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeSuggestion(i)}
+                                            className="text-scout-400 hover:text-red-500 transition-colors"
+                                            aria-label="Remover sugestão"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {suggestions.length < 6 && (
+                            <div className="flex gap-2">
+                                <Input
+                                    value={newSuggestion}
+                                    onChange={(e) => setNewSuggestion(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") { e.preventDefault(); addSuggestion(); }
+                                    }}
+                                    placeholder="Ex: Como criar um PUD para o ramo escoteiro?"
+                                    className="flex-1 text-sm border-cream-300 bg-cream-50"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={addSuggestion}
+                                    disabled={!newSuggestion.trim()}
+                                    className="border-scout-300 text-scout-600 hover:bg-scout-50"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        )}
+                        <p className="text-xs text-scout-400">
+                            Botões exibidos no chat vazio para orientar o usuário. Máximo 6. Sem sugestões, exibe perguntas padrão.
+                        </p>
                     </div>
                 </CardContent>
             </Card>

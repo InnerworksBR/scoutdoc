@@ -7,7 +7,7 @@ export default async function AgentChatPage({ params }: { params: Promise<{ agen
     const supabase = await createClient();
 
     const [{ data: agent }, { data: { user } }] = await Promise.all([
-        supabase.from("agents").select("id, name, description, avatar_color").eq("id", agentId).eq("is_active", true).single(),
+        supabase.from("agents").select("id, name, description, avatar_color, welcome_message, suggestions").eq("id", agentId).eq("is_active", true).single(),
         supabase.auth.getUser(),
     ]);
 
@@ -30,6 +30,8 @@ export default async function AgentChatPage({ params }: { params: Promise<{ agen
                 agentColor={agent.avatar_color || "oklch(0.38 0.17 145)"}
                 userEmail={user?.email ?? undefined}
                 conversations={conversations || []}
+                welcomeMessage={agent.welcome_message ?? null}
+                suggestions={Array.isArray(agent.suggestions) ? agent.suggestions as string[] : null}
             />
         </div>
     );

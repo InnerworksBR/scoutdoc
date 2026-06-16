@@ -26,6 +26,8 @@ interface ChatInterfaceProps {
     agentColor: string;
     userEmail?: string;
     conversations: Conversation[];
+    welcomeMessage?: string | null;
+    suggestions?: string[] | null;
 }
 
 const SUGGESTED = [
@@ -41,7 +43,12 @@ export default function ChatInterface({
     agentColor,
     userEmail,
     conversations: initialConversations,
+    welcomeMessage,
+    suggestions: agentSuggestions,
 }: ChatInterfaceProps) {
+    const activeSuggestions = Array.isArray(agentSuggestions) && agentSuggestions.length > 0
+        ? agentSuggestions
+        : SUGGESTED;
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [isStreaming, setIsStreaming] = useState(false);
@@ -290,14 +297,16 @@ export default function ChatInterface({
                                 </div>
                             </div>
                             <h2 className="font-display font-bold text-scout-900 text-2xl mb-2">{agentName}</h2>
-                            {agentDescription && (
+                            {welcomeMessage ? (
+                                <p className="text-scout-600 text-sm mb-8 max-w-xs leading-relaxed">{welcomeMessage}</p>
+                            ) : agentDescription ? (
                                 <p className="text-scout-500 text-sm mb-8 max-w-xs leading-relaxed">{agentDescription}</p>
-                            )}
+                            ) : null}
                             <p className="text-xs text-scout-400 font-semibold uppercase tracking-widest mb-3">
                                 Sugestões para começar
                             </p>
                             <div className="flex flex-col gap-2 w-full max-w-sm">
-                                {SUGGESTED.map((s) => (
+                                {activeSuggestions.map((s) => (
                                     <button
                                         key={s}
                                         onClick={() => sendMessage(s)}

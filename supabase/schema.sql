@@ -170,3 +170,10 @@ create policy "messages_self" on messages
   );
 
 create index if not exists messages_conversation_id_idx on messages (conversation_id);
+
+-- ============================================================
+-- 7. MIGRAÇÃO 001 — Sugestões e Boas-vindas por Agente
+-- ============================================================
+alter table agents
+  add column if not exists welcome_message text,
+  add column if not exists suggestions jsonb not null default '[]'::jsonb;
