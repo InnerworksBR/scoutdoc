@@ -5,8 +5,7 @@ import { Send, Plus, MessageSquare, Loader2, ChevronLeft, Compass, FileDown, Pap
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import CitationBadge, { ReferenceFooter } from "@/components/CitationBadge";
-import { parseCitations } from "@/lib/citations";
+import MarkdownMessage from "@/components/MarkdownMessage";
 import PreviewModal from "@/components/PreviewModal";
 import { formatPreviewContent } from "@/lib/document-template";
 import type { DocumentTemplate } from "@/lib/document-template";
@@ -51,25 +50,7 @@ const SUGGESTED = [
 ];
 
 function AssistantContent({ content }: { content: string }) {
-    const { segments, references } = parseCitations(content);
-    return (
-        <div>
-            <p className="whitespace-pre-wrap">
-                {segments.map((seg, i) =>
-                    seg.type === "text" ? (
-                        <span key={i}>{seg.value}</span>
-                    ) : (
-                        <CitationBadge
-                            key={i}
-                            source={seg.source}
-                            index={references.indexOf(seg.source)}
-                        />
-                    )
-                )}
-            </p>
-            <ReferenceFooter references={references} />
-        </div>
-    );
+    return <MarkdownMessage content={content} />;
 }
 
 export default function ChatInterface({
