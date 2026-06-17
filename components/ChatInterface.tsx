@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Plus, MessageSquare, Loader2, ChevronLeft, Compass, FileDown, Paperclip, X } from "lucide-react";
+import type { CSSProperties } from "react";
+import { Send, Plus, MessageSquare, Loader2, ChevronLeft, FileDown, Paperclip, X } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -294,33 +295,31 @@ export default function ChatInterface({
         }
     };
 
+    const userBubble: CSSProperties = { borderRadius: "16px 16px 5px 16px" };
+    const botBubble: CSSProperties = { borderRadius: "16px 16px 16px 5px" };
+
     return (
         <>
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden bg-cream-100">
 
             {/* ── Sidebar ── */}
             <aside className={cn(
-                "flex-shrink-0 flex flex-col transition-all duration-300 overflow-hidden",
+                "flex-shrink-0 flex flex-col transition-all duration-300 overflow-hidden bg-ink",
                 sidebarOpen ? "w-64" : "w-0"
-            )}
-                style={{ background: "oklch(0.15 0.06 145)" }}
-            >
+            )}>
                 <div className="flex flex-col h-full min-w-64">
                     {/* Sidebar Header */}
                     <div className="px-4 pt-5 pb-3">
                         <Link href="/assistants" className="flex items-center gap-2 mb-5 group">
-                            <Compass className="w-4 h-4 text-scout-400 group-hover:text-gold-400 transition-colors" strokeWidth={2} />
-                            <span className="text-xs font-semibold text-scout-400 group-hover:text-gold-400 transition-colors uppercase tracking-widest">
+                            <ChevronLeft className="w-4 h-4 text-lime group-hover:text-white transition-colors" strokeWidth={2.5} />
+                            <span className="text-xs font-display font-semibold text-lime group-hover:text-white transition-colors uppercase tracking-widest">
                                 Assistentes
                             </span>
                         </Link>
 
                         <button
                             onClick={startNewConversation}
-                            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group"
-                            style={{ background: "oklch(0.22 0.08 145)", color: "oklch(0.90 0.06 80)" }}
-                            onMouseEnter={e => (e.currentTarget.style.background = "oklch(0.28 0.10 80)")}
-                            onMouseLeave={e => (e.currentTarget.style.background = "oklch(0.22 0.08 145)")}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-[12px] text-sm font-display font-semibold bg-lime text-ink border-[2.5px] border-ink shadow-[2px_2px_0_#0a3a2b] transition-all hover:-translate-y-px"
                         >
                             <Plus className="w-4 h-4" />
                             Nova Conversa
@@ -328,11 +327,10 @@ export default function ChatInterface({
                     </div>
 
                     {/* Conversation list */}
-                    <div className="flex-1 overflow-y-auto px-2 pb-4">
+                    <div className="flex-1 overflow-y-auto sd-scroll px-2 pb-4">
                         {conversations.length > 0 ? (
                             <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-widest px-2 mb-2"
-                                    style={{ color: "oklch(0.45 0.05 145)" }}>
+                                <p className="text-[10px] uppercase tracking-widest px-2 mb-2 text-white/40 font-semibold">
                                     Conversas
                                 </p>
                                 {conversations.map((conv) => (
@@ -340,27 +338,11 @@ export default function ChatInterface({
                                         key={conv.id}
                                         onClick={() => loadConversation(conv.id)}
                                         className={cn(
-                                            "w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all duration-150 group",
+                                            "w-full text-left px-3 py-2.5 rounded-[10px] text-xs transition-all duration-150",
                                             conversationId === conv.id
-                                                ? "text-white font-medium"
-                                                : "hover:text-white font-normal"
+                                                ? "bg-white/15 text-white font-medium"
+                                                : "text-white/55 hover:bg-white/10 hover:text-white font-normal"
                                         )}
-                                        style={{
-                                            background: conversationId === conv.id ? "oklch(0.25 0.09 145)" : "transparent",
-                                            color: conversationId === conv.id ? "white" : "oklch(0.60 0.05 145)",
-                                        }}
-                                        onMouseEnter={e => {
-                                            if (conversationId !== conv.id) {
-                                                e.currentTarget.style.background = "oklch(0.20 0.07 145)";
-                                                e.currentTarget.style.color = "white";
-                                            }
-                                        }}
-                                        onMouseLeave={e => {
-                                            if (conversationId !== conv.id) {
-                                                e.currentTarget.style.background = "transparent";
-                                                e.currentTarget.style.color = "oklch(0.60 0.05 145)";
-                                            }
-                                        }}
                                     >
                                         <div className="flex items-start gap-2">
                                             <MessageSquare className="w-3 h-3 mt-0.5 flex-shrink-0 opacity-60" />
@@ -375,26 +357,25 @@ export default function ChatInterface({
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-xs text-center mt-6 px-4 leading-relaxed"
-                                style={{ color: "oklch(0.45 0.05 145)" }}>
+                            <p className="text-xs text-center mt-6 px-4 leading-relaxed text-white/40">
                                 Nenhuma conversa ainda.<br />Comece uma nova pergunta.
                             </p>
                         )}
                     </div>
 
                     {/* Agent info at bottom */}
-                    <div className="px-4 py-3 border-t" style={{ borderColor: "oklch(0.22 0.06 145)" }}>
+                    <div className="px-4 py-3 border-t border-white/10">
                         <div className="flex items-center gap-2.5">
                             <AgentAvatar
                                 name={agentName}
                                 avatarColor={agentColor}
                                 avatarUrl={agentAvatarUrl}
                                 size={28}
-                                className="ring-2 ring-white/10"
+                                className="ring-2 ring-white/15"
                             />
                             <div className="min-w-0">
                                 <p className="text-xs font-semibold truncate text-white">{agentName}</p>
-                                <p className="text-[10px]" style={{ color: "oklch(0.50 0.05 145)" }}>Assistente UEB</p>
+                                <p className="text-[10px] text-white/45">Assistente UEB</p>
                             </div>
                         </div>
                     </div>
@@ -402,35 +383,30 @@ export default function ChatInterface({
             </aside>
 
             {/* ── Main Chat ── */}
-            <div className="flex-1 flex flex-col overflow-hidden relative" style={{ background: "oklch(0.98 0.01 100)" }}>
+            <div className="flex-1 flex flex-col overflow-hidden relative bg-cream-100">
 
                 {/* Top bar inside chat */}
-                <div className="flex items-center gap-3 px-4 py-3 border-b bg-white flex-shrink-0"
-                    style={{ borderColor: "oklch(0.92 0.02 100)" }}>
+                <div className="flex items-center gap-3 px-4 py-2.5 border-b-2 border-cream-200 bg-white flex-shrink-0">
                     <button
                         onClick={() => setSidebarOpen((o) => !o)}
-                        className="p-1.5 rounded-lg hover:bg-cream-100 text-scout-500 transition-colors"
+                        className="p-1.5 rounded-[10px] hover:bg-cream-100 text-[#45564f] transition-colors"
                     >
                         <ChevronLeft className={cn("w-4 h-4 transition-transform duration-300", !sidebarOpen && "rotate-180")} />
                     </button>
-                    <div className="h-5 w-px bg-cream-200" />
+                    <div className="h-5 w-px bg-cream-300" />
                     <AgentAvatar
                         name={agentName}
                         avatarColor={agentColor}
                         avatarUrl={agentAvatarUrl}
-                        size={32}
-                        className="shadow-sm"
+                        size={40}
+                        className="border-[2.5px] border-ink"
                     />
                     <div className="flex-1 min-w-0">
-                        <p className="font-display font-bold text-scout-900 text-sm leading-tight truncate">{agentName}</p>
-                        {agentDescription && (
-                            <p className="text-xs text-scout-400 truncate">{agentDescription}</p>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full"
-                        style={{ background: "oklch(0.94 0.06 145)", color: "oklch(0.38 0.17 145)" }}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-scout-500 animate-pulse" />
-                        Online
+                        <p className="font-display font-semibold text-ink text-[15px] leading-tight truncate">{agentName}</p>
+                        <p className="text-xs text-scout-600 font-bold flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-scout-600 animate-pulse" />
+                            Online{agentDescription ? ` · ${agentDescription}` : ""}
+                        </p>
                     </div>
 
                     {producesDocument && (
@@ -438,20 +414,7 @@ export default function ChatInterface({
                             onClick={handleGenerateDocument}
                             disabled={!conversationId || messages.length === 0 || isStreaming || isGeneratingDoc}
                             title="Gerar documento estruturado com base na conversa"
-                            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
-                            style={{
-                                borderColor: "oklch(0.60 0.14 240)",
-                                color: "oklch(0.40 0.14 240)",
-                                background: "oklch(0.96 0.04 240)",
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!e.currentTarget.disabled) {
-                                    e.currentTarget.style.background = "oklch(0.90 0.08 240)";
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "oklch(0.96 0.04 240)";
-                            }}
+                            className="flex items-center gap-1.5 text-xs font-display font-semibold px-3 py-2 rounded-[12px] border-[2.5px] border-ink bg-royal-50 text-royal transition-all hover:-translate-y-px disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                         >
                             {isGeneratingDoc
                                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -463,30 +426,30 @@ export default function ChatInterface({
                 </div>
 
                 {/* Messages area */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto sd-scroll">
                     {messages.length === 0 ? (
                         /* Empty state */
                         <div className="flex flex-col items-center justify-center h-full px-6 text-center">
                             <div className="mb-6 relative">
                                 <AgentAvatar
                                     name={agentName}
-                                    avatarColor={`linear-gradient(135deg, ${agentColor}, oklch(0.48 0.20 240))`}
+                                    avatarColor={agentColor}
                                     avatarUrl={agentAvatarUrl}
                                     size={80}
                                     rounded="2xl"
-                                    className="shadow-xl"
+                                    className="border-[3px] border-ink shadow-[5px_5px_0_#16302b]"
                                 />
-                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-scout-500 rounded-full flex items-center justify-center ring-2 ring-white">
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-scout-600 rounded-full flex items-center justify-center border-[2.5px] border-ink">
                                     <span className="text-white text-[10px]">✓</span>
                                 </div>
                             </div>
-                            <h2 className="font-display font-bold text-scout-900 text-2xl mb-2">{agentName}</h2>
+                            <h2 className="font-display font-semibold text-ink text-2xl mb-2">{agentName}</h2>
                             {welcomeMessage ? (
-                                <p className="text-scout-600 text-sm mb-8 max-w-xs leading-relaxed">{welcomeMessage}</p>
+                                <p className="text-[#5a6a63] text-sm mb-8 max-w-sm leading-relaxed font-medium">{welcomeMessage}</p>
                             ) : agentDescription ? (
-                                <p className="text-scout-500 text-sm mb-8 max-w-xs leading-relaxed">{agentDescription}</p>
+                                <p className="text-[#6a7a73] text-sm mb-8 max-w-sm leading-relaxed font-medium">{agentDescription}</p>
                             ) : null}
-                            <p className="text-xs text-scout-400 font-semibold uppercase tracking-widest mb-3">
+                            <p className="text-xs text-[#8a9a93] font-display font-semibold uppercase tracking-widest mb-3">
                                 Sugestões para começar
                             </p>
                             <div className="flex flex-col gap-2 w-full max-w-sm">
@@ -494,8 +457,7 @@ export default function ChatInterface({
                                     <button
                                         key={s}
                                         onClick={() => sendMessage(s)}
-                                        className="text-left text-sm px-4 py-3 rounded-xl border bg-white hover:border-scout-400 hover:bg-scout-50 hover:text-scout-800 transition-all duration-150 text-scout-600 font-medium shadow-sm"
-                                        style={{ borderColor: "oklch(0.88 0.03 100)" }}
+                                        className="text-left text-sm px-4 py-3 rounded-[14px] border-[2.5px] border-ink bg-white hover:bg-[#f1f7e4] transition-colors text-ink font-medium"
                                     >
                                         {s}
                                     </button>
@@ -503,9 +465,9 @@ export default function ChatInterface({
                             </div>
                         </div>
                     ) : (
-                        <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+                        <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
                             {messages.map((msg, idx) => (
-                                <div key={idx} className={cn("flex gap-3", msg.role === "user" ? "justify-end" : "justify-start")}>
+                                <div key={idx} className={cn("flex gap-2.5 items-end", msg.role === "user" ? "justify-end" : "justify-start")}>
 
                                     {/* Assistant avatar */}
                                     {msg.role === "assistant" && (
@@ -513,16 +475,14 @@ export default function ChatInterface({
                                             name={agentName}
                                             avatarColor={agentColor}
                                             avatarUrl={agentAvatarUrl}
-                                            size={32}
-                                            rounded="xl"
-                                            className="mt-0.5 shadow-sm"
+                                            size={36}
+                                            className="border-[2.5px] border-ink"
                                         />
                                     )}
 
                                     {/* Bubble */}
                                     {msg.pending ? (
-                                        <div className="flex items-center gap-1.5 px-5 py-4 bg-white rounded-2xl rounded-tl-sm border shadow-sm"
-                                            style={{ borderColor: "oklch(0.90 0.02 100)" }}>
+                                        <div className="flex items-center gap-1.5 px-5 py-4 bg-white rounded-2xl border-[2.5px] border-ink shadow-[2px_3px_0_#16302b]" style={botBubble}>
                                             {[0, 150, 300].map((delay) => (
                                                 <span
                                                     key={delay}
@@ -533,8 +493,8 @@ export default function ChatInterface({
                                         </div>
                                     ) : msg.role === "user" ? (
                                         <div
-                                            className="max-w-[72%] px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed text-white font-medium shadow-sm"
-                                            style={{ background: "oklch(0.38 0.17 145)" }}
+                                            className="max-w-[78%] px-4 py-3 text-sm leading-relaxed text-white font-medium bg-scout-600 border-[2.5px] border-ink shadow-[2px_3px_0_#16302b]"
+                                            style={userBubble}
                                         >
                                             {msg.imageUrl && (
                                                 <a href={msg.imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
@@ -550,12 +510,8 @@ export default function ChatInterface({
                                         </div>
                                     ) : (
                                         <div
-                                            className="max-w-[72%] px-5 py-4 bg-white rounded-2xl rounded-tl-sm border text-sm leading-relaxed text-scout-800 shadow-sm"
-                                            style={{
-                                                borderColor: "oklch(0.90 0.02 100)",
-                                                borderLeftWidth: "3px",
-                                                borderLeftColor: agentColor,
-                                            }}
+                                            className="max-w-[78%] px-5 py-4 bg-white border-[2.5px] border-ink text-sm leading-relaxed text-scout-800 shadow-[2px_3px_0_#16302b]"
+                                            style={botBubble}
                                         >
                                             <AssistantContent content={msg.content} />
                                         </div>
@@ -566,9 +522,8 @@ export default function ChatInterface({
                                         <UserAvatar
                                             avatarUrl={userAvatarUrl}
                                             email={userEmail}
-                                            size={32}
-                                            rounded="xl"
-                                            className="mt-0.5 shadow-sm"
+                                            size={36}
+                                            className="border-[2.5px] border-ink"
                                         />
                                     )}
                                 </div>
@@ -580,35 +535,35 @@ export default function ChatInterface({
 
                 {/* Error banners */}
                 {docGenerateError && (
-                    <div className="flex-shrink-0 px-4 py-2 bg-red-50 border-b border-red-200 flex items-center justify-between">
-                        <p className="text-xs text-red-700">{docGenerateError}</p>
+                    <div className="flex-shrink-0 px-4 py-2 bg-red-50 border-t-2 border-red-200 flex items-center justify-between">
+                        <p className="text-xs text-red-700 font-medium">{docGenerateError}</p>
                         <button onClick={() => setDocGenerateError(null)} className="text-red-500 hover:text-red-700 text-xs ml-3">✕</button>
                     </div>
                 )}
                 {imageUploadError && (
-                    <div className="flex-shrink-0 px-4 py-2 bg-red-50 border-b border-red-200 flex items-center justify-between">
-                        <p className="text-xs text-red-700">{imageUploadError}</p>
+                    <div className="flex-shrink-0 px-4 py-2 bg-red-50 border-t-2 border-red-200 flex items-center justify-between">
+                        <p className="text-xs text-red-700 font-medium">{imageUploadError}</p>
                         <button onClick={() => setImageUploadError(null)} className="text-red-500 hover:text-red-700 text-xs ml-3">✕</button>
                     </div>
                 )}
 
                 {/* Image preview strip */}
                 {imagePreviewUrl && (
-                    <div className="flex-shrink-0 px-4 pt-3 bg-white border-t" style={{ borderColor: "oklch(0.92 0.02 100)" }}>
+                    <div className="flex-shrink-0 px-4 pt-3 bg-cream-100">
                         <div className="max-w-3xl mx-auto">
                             <div className="relative inline-block">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                     src={imagePreviewUrl}
                                     alt="Imagem selecionada"
-                                    className="h-20 w-20 object-cover rounded-lg border border-cream-200"
+                                    className="h-20 w-20 object-cover rounded-[12px] border-[2.5px] border-ink"
                                 />
                                 <button
                                     onClick={clearSelectedImage}
-                                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white border border-cream-300 rounded-full flex items-center justify-center shadow-sm hover:bg-red-50 transition-colors"
+                                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white border-2 border-ink rounded-full flex items-center justify-center hover:bg-red-50 transition-colors"
                                     aria-label="Remover imagem"
                                 >
-                                    <X className="w-3 h-3 text-scout-500" />
+                                    <X className="w-3 h-3 text-ink" />
                                 </button>
                             </div>
                         </div>
@@ -616,12 +571,9 @@ export default function ChatInterface({
                 )}
 
                 {/* Input area */}
-                <div className={cn("flex-shrink-0 px-4 py-4 bg-white", !imagePreviewUrl && "border-t")} style={{ borderColor: "oklch(0.92 0.02 100)" }}>
+                <div className="flex-shrink-0 px-4 py-4 bg-cream-100">
                     <div className="max-w-3xl mx-auto">
-                        <div
-                            className="flex items-end gap-2 bg-white rounded-2xl border px-3 py-3 shadow-sm focus-within:border-scout-400 focus-within:shadow-md transition-all duration-200"
-                            style={{ borderColor: "oklch(0.85 0.03 100)" }}
-                        >
+                        <div className="flex items-end gap-2 bg-cream-50 rounded-[16px] border-[2.5px] border-ink px-3 py-2.5 transition-colors focus-within:border-azure-500">
                             {/* Attachment button */}
                             <input
                                 ref={fileInputRef}
@@ -634,7 +586,7 @@ export default function ChatInterface({
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isStreaming || isUploadingImage}
-                                className="flex-shrink-0 p-1.5 text-scout-400 hover:text-scout-600 hover:bg-cream-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="flex-shrink-0 p-1.5 text-[#6a7a73] hover:text-ink hover:bg-cream-200 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 title="Anexar imagem"
                             >
                                 <Paperclip className="w-4 h-4" />
@@ -654,21 +606,16 @@ export default function ChatInterface({
                                         sendMessage();
                                     }
                                 }}
-                                placeholder="Faça sua pergunta sobre metodologia escoteira…"
+                                placeholder="Pergunte ao assistente..."
                                 rows={1}
                                 disabled={isStreaming || isUploadingImage}
-                                className="flex-1 bg-transparent text-sm text-scout-800 placeholder-scout-400 resize-none focus:outline-none disabled:opacity-50 leading-relaxed"
+                                className="flex-1 bg-transparent text-sm text-scout-800 placeholder-[#8aa39a] resize-none focus:outline-none disabled:opacity-50 leading-relaxed font-medium py-1.5"
                                 style={{ maxHeight: "120px" }}
                             />
                             <button
                                 onClick={() => sendMessage()}
                                 disabled={isStreaming || isUploadingImage || (!input.trim() && !selectedImage)}
-                                className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-                                style={{
-                                    background: (isStreaming || isUploadingImage || (!input.trim() && !selectedImage))
-                                        ? "oklch(0.75 0.05 145)"
-                                        : "oklch(0.38 0.17 145)",
-                                }}
+                                className="flex-shrink-0 w-10 h-10 rounded-[12px] flex items-center justify-center text-white bg-scout-600 border-[2.5px] border-ink transition-all hover:-translate-y-px disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                             >
                                 {isStreaming || isUploadingImage
                                     ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -676,9 +623,8 @@ export default function ChatInterface({
                                 }
                             </button>
                         </div>
-                        <p className="text-center text-[11px] text-scout-400 mt-2.5">
-                            As respostas são geradas por IA e podem conter imprecisões.
-                            Sempre consulte os documentos oficiais da UEB.
+                        <p className="text-center text-[10.5px] text-[#8a9a93] mt-2.5 font-semibold">
+                            Respostas baseadas em POR · PNAME · Matriz de Formação
                         </p>
                     </div>
                 </div>

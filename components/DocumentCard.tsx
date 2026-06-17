@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, MoreVertical, Calendar, Download, Loader2, Trash2 } from "lucide-react";
 import {
@@ -66,69 +65,65 @@ export default function DocumentCard({ doc, onDelete }: DocumentCardProps) {
         }
     };
 
+    const isReady = doc.status === "completed";
+
     return (
-        <Card className="group hover:border-scout-300 hover:shadow-lg hover:shadow-azure-100/50 transition-all bg-white">
-            <CardHeader className="pb-3 flex flex-row items-start justify-between space-y-0">
-                <div className="p-2 bg-cream-100 rounded-md group-hover:bg-scout-50 transition-colors">
-                    <FileText className="w-5 h-5 text-scout-600" />
+        <div className="group bg-white border-[3px] border-ink rounded-[18px] shadow-[4px_4px_0_#16302b] p-[18px] transition-transform hover:-translate-x-px hover:-translate-y-px hover:shadow-[5px_5px_0_#16302b]">
+            <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-[12px] border-[2.5px] border-ink flex items-center justify-center text-ink" style={{ background: isReady ? "#d8f5e3" : "#fff2b8" }}>
+                    <FileText className="w-5 h-5" />
                 </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-scout-400">
-                            <MoreVertical className="w-4 h-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleDownload} disabled={isDownloading}>
-                            <Download className="w-4 h-4 mr-2" />
-                            {isDownloading ? "Baixando..." : "Baixar .docx"}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            onClick={handleDelete}
-                            disabled={isDeleting}
-                            className="text-red-600 focus:text-red-600"
-                        >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            {isDeleting ? "Excluindo..." : "Excluir"}
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </CardHeader>
-            <CardContent>
-                <div className="mb-1 text-xs font-semibold text-scout-500 uppercase tracking-wider">
-                    {doc.linha} • {doc.type}
+                <div className="flex items-center gap-1.5">
+                    <span className="font-display font-semibold text-[11px] text-ink border-2 border-ink px-2.5 py-0.5 rounded-full" style={{ background: isReady ? "#b0dd43" : "#ffda3e" }}>
+                        {isReady ? "Pronto" : "Rascunho"}
+                    </span>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-[#6a7a73]">
+                                <MoreVertical className="w-4 h-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={handleDownload} disabled={isDownloading}>
+                                <Download className="w-4 h-4 mr-2" />
+                                {isDownloading ? "Baixando..." : "Baixar .docx"}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                                className="text-red-600 focus:text-red-600"
+                            >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                {isDeleting ? "Excluindo..." : "Excluir"}
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
-                <h3 className="font-display font-bold text-lg text-scout-900 mb-2 truncate" title={doc.title}>
-                    {doc.title}
-                </h3>
-                <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center text-xs text-scout-400">
-                        <Calendar className="w-3 h-3 mr-1" />{" "}
-                        {new Date(doc.created_at).toLocaleDateString("pt-BR")}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span
-                            className={`text-xs px-2 py-1 rounded-full font-medium ${doc.status === "completed"
-                                    ? "bg-scout-100 text-scout-700"
-                                    : "bg-gold-300/40 text-gold-700"
-                                }`}
-                        >
-                            {doc.status === "completed" ? "Gerado" : "Rascunho"}
-                        </span>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-scout-500 hover:text-azure-600"
-                            onClick={handleDownload}
-                            disabled={isDownloading}
-                            title="Baixar rapidamente"
-                        >
-                            {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-                        </Button>
-                    </div>
+            </div>
+
+            <div className="mb-1 text-[11px] font-bold text-scout-600 uppercase tracking-wider">
+                {doc.linha} • {doc.type}
+            </div>
+            <h3 className="font-display font-semibold text-[15px] text-ink leading-tight mb-2 truncate" title={doc.title}>
+                {doc.title}
+            </h3>
+            <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center text-xs text-[#6a7a73] font-semibold">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    {new Date(doc.created_at).toLocaleDateString("pt-BR")}
                 </div>
-            </CardContent>
-        </Card>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-scout-600 hover:text-azure-600"
+                    onClick={handleDownload}
+                    disabled={isDownloading}
+                    title="Baixar rapidamente"
+                >
+                    {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                </Button>
+            </div>
+        </div>
     );
 }

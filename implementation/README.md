@@ -24,6 +24,30 @@ Origem: auditoria de funcionalidades solicitada em 2026-06-16, decomposta em 7 i
 4. **004** — documentos estruturados nos agentes (requer 003 e 002)
 5. **005**, **006**, **007** — pipeline de imagens (independentes entre si)
 
+## Redesign ScoutDoc 2026 (012–017)
+
+Origem: design aprovado **"ScoutDoc 2026.dc.html"** (tema sticker/neo-brutalista escoteiro —
+Fredoka+Montserrat, bordas tinta `#16302b`, sombras hard-offset, paleta verde `#08ba54` /
+lime `#b0dd43` / azure `#02a1d9` / azul-real `#0649d5` / dourado `#ffda3e` sobre creme `#f1efe4`).
+Decomposto em 6 implementações coesas; **012 é a fundação** e habilita as demais.
+
+| Nº | Implementação | Escopo | Status | Depende de |
+|----|---------------|--------|--------|------------|
+| [012](./012%20-%20Fundacao%20Design%20System%20ScoutDoc%202026/spec.md) | Fundação Design System ScoutDoc 2026 | Fontes, paleta, animações, utilitários sticker, assets UEB, primitivos UI | 🟢 Concluída | — |
+| [013](./013%20-%20Redesign%20Landing%20e%20Login/spec.md) | Redesign Landing & Login | Telas Landing + Login | 🟢 Concluída | 012 |
+| [014](./014%20-%20Redesign%20Dashboard/spec.md) | Redesign Dashboard | Hero, CTA PUD, carrossel de assistentes, grid de documentos | 🟢 Concluída | 012 |
+| [015](./015%20-%20Redesign%20Assistentes%20e%20Chat/spec.md) | Redesign Assistentes & Chat | Lista de assistentes + chat (bolhas, sugestões, header) | 🟢 Concluída | 012 |
+| [016](./016%20-%20Redesign%20Gerador%20de%20PUD%20e%20Loading/spec.md) | Redesign Gerador de PUD & Loading | Wizard 4 passos + trilha de progresso + loading | 🟢 Concluída | 012 |
+| [017](./017%20-%20Redesign%20Preview%20de%20Documento%20e%20Apoio/spec.md) | Redesign Preview de Documento & Apoio | Preview do PUD (selo, export) + perfil/admin herdam tema | 🟢 Concluída | 012 |
+
+### Ordem de Execução Recomendada (redesign)
+1. **012** — fundação (obrigatória primeiro)
+2. **013** — Landing & Login (entrada pública)
+3. **014**, **015**, **016**, **017** — telas internas (independentes entre si após 012)
+
+> **Status do redesign:** ✅ 012–017 concluídas. Verificação: `tsc --noEmit` ✓ e `next build` ✓ (21 rotas).
+> Lógica/funcionalidades preservadas; erros de lint `no-explicit-any` são pré-existentes (dívida de tipagem do projeto, não gateiam o build no Next 16).
+
 ## Legenda de Status
 
 🟡 Planejada · 🔵 Em Andamento · 🟢 Concluída · 🔴 Bloqueada · ⚪ Cancelada

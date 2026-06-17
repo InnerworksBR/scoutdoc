@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const labelVariants = cva(
-    "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-scout-700"
+    "font-display text-sm font-medium leading-none text-scout-800 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 )
 
 // Simplified Label without Radix for now if not installed, but standard is Radix.

@@ -1,22 +1,24 @@
 import type { Metadata } from "next";
-import { Outfit, Plus_Jakarta_Sans } from "next/font/google"; // Distinctive fonts
+import { Fredoka, Montserrat } from "next/font/google"; // ScoutDoc 2026 — sticker theme
 import "./globals.css";
 
-const outfit = Outfit({
+const fredoka = Fredoka({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const montserrat = Montserrat({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-body",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Agent Scout Doc Generator",
-  description: "AI-powered scout document generator",
+  title: "ScoutDoc — IA a serviço do escotismo",
+  description: "Gere Planos de Unidade Didática e converse com assistentes escoteiros movidos a IA.",
 };
 
 export default function RootLayout({
@@ -25,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${outfit.variable} ${plusJakartaSans.variable}`}>
+    <html lang="pt-BR" className={`${fredoka.variable} ${montserrat.variable}`}>
       <body className="antialiased font-body bg-background text-foreground">
         {children}
       </body>

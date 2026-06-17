@@ -26,12 +26,12 @@ export default function DashboardClient({ documents: initialDocs }: DashboardCli
     return (
         <>
             {/* Filter Bar */}
-            <div className="flex items-center space-x-2 mb-5 max-w-sm">
+            <div className="flex items-center mb-5 max-w-sm">
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-scout-400" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8aa39a]" />
                     <Input
                         placeholder="Buscar documentos..."
-                        className="pl-9 bg-cream-50 border-cream-200 focus:bg-white"
+                        className="pl-10"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
@@ -46,20 +46,20 @@ export default function DashboardClient({ documents: initialDocs }: DashboardCli
 
                 {/* Empty State */}
                 {filtered.length === 0 && (
-                    <div className="col-span-full border-2 border-dashed border-cream-300 rounded-lg p-12 flex flex-col items-center justify-center text-center">
-                        <div className="p-4 bg-cream-100 rounded-full mb-4">
-                            <FileText className="w-8 h-8 text-scout-400" />
+                    <div className="col-span-full bg-white border-[3px] border-dashed border-cream-300 rounded-[20px] p-12 flex flex-col items-center justify-center text-center">
+                        <div className="w-16 h-16 bg-cream-100 border-[2.5px] border-ink rounded-full flex items-center justify-center mb-4">
+                            <FileText className="w-7 h-7 text-scout-600" />
                         </div>
                         {search ? (
                             <>
-                                <h3 className="font-display font-bold text-lg text-scout-800">Nenhum resultado</h3>
-                                <p className="text-scout-500 mb-4">Nenhum documento com &ldquo;{search}&rdquo;.</p>
+                                <h3 className="font-display font-semibold text-lg text-ink">Nenhum resultado</h3>
+                                <p className="text-[#5a6a63] mb-4 font-medium">Nenhum documento com &ldquo;{search}&rdquo;.</p>
                                 <Button variant="outline" onClick={() => setSearch("")}>Limpar busca</Button>
                             </>
                         ) : (
                             <>
-                                <h3 className="font-display font-bold text-lg text-scout-800">Nenhum documento ainda</h3>
-                                <p className="text-scout-500 mb-6 max-w-sm">Comece criando seu primeiro Plano de Unidade Didática agora mesmo.</p>
+                                <h3 className="font-display font-semibold text-lg text-ink">Nenhum documento ainda</h3>
+                                <p className="text-[#5a6a63] mb-6 max-w-sm font-medium">Comece criando seu primeiro Plano de Unidade Didática agora mesmo.</p>
                                 <Link href="/pud/new">
                                     <Button variant="scout">
                                         <Plus className="w-4 h-4 mr-2" /> Criar PUD

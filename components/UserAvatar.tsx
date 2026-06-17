@@ -39,7 +39,8 @@ export default function UserAvatar({
         <div
             className={`${rClass} flex items-center justify-center text-white font-bold flex-shrink-0 ${className}`}
             style={{
-                background: "oklch(0.28 0.14 145)",
+                background: "#ffda3e",
+                color: "#16302b",
                 width: size,
                 height: size,
                 fontSize: Math.max(8, Math.floor(size * 0.4)),

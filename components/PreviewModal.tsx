@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, X, Download, Loader2, FileDown } from "lucide-react";
+import { X, Download, Loader2, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PreviewModalProps {
@@ -59,51 +59,64 @@ export default function PreviewModal({
         }
     };
 
+    const downloadDisabled = !data && !downloadHandler;
+
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-scout-900/40 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/45 backdrop-blur-sm p-4">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-scout-100"
+                        className="relative bg-white border-[3px] border-ink rounded-[20px] shadow-[7px_8px_0_#16302b] w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
                     >
+                        {/* gradient stripe */}
+                        <div className="h-[9px] bg-gradient-to-r from-scout-600 via-azure-500 to-gold-500" />
+
+                        {/* selo APROVADO */}
+                        <div className="absolute top-[26px] right-[26px] z-[5] w-[92px] h-[92px] rounded-full border-4 border-scout-600/50 text-scout-600/80 flex flex-col items-center justify-center -rotate-[14deg] text-center pointer-events-none">
+                            <span className="font-display font-semibold text-[17px] leading-none">APROVADO</span>
+                            <span className="text-[8px] font-bold tracking-[0.08em] mt-1">POR ✓</span>
+                        </div>
+
                         {/* Header */}
-                        <div className="flex items-center justify-between p-4 border-b border-cream-200 bg-scout-gradient text-white">
-                            <div className="flex items-center space-x-2">
-                                <FileText className="w-5 h-5" />
-                                <h3 className="font-display font-semibold text-lg">{title}</h3>
+                        <div className="flex items-start justify-between px-7 pt-5 pb-3">
+                            <div>
+                                <div className="inline-flex items-center gap-1.5 bg-lime border-[2.5px] border-ink rounded-full px-3 py-1 font-display font-semibold text-[12px] text-ink shadow-[2px_2px_0_#16302b] mb-2.5">
+                                    ✓ PUD gerado
+                                </div>
+                                <h3 className="font-display font-semibold text-xl text-ink max-w-[380px] leading-tight">{title}</h3>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/20 text-white">
+                            <button onClick={onClose} className="p-1.5 rounded-[10px] text-[#6a7a73] hover:bg-cream-100 transition-colors">
                                 <X className="w-5 h-5" />
-                            </Button>
+                            </button>
                         </div>
 
                         {/* Content (Scrollable) */}
-                        <div className="flex-1 overflow-y-auto p-6 bg-white">
-                            <pre className="whitespace-pre-wrap text-sm font-mono text-scout-700 bg-cream-50 p-4 rounded-md border border-cream-200">
+                        <div className="flex-1 overflow-y-auto sd-scroll px-7 pb-5">
+                            <pre className="whitespace-pre-wrap text-sm font-mono text-scout-800 bg-cream-50 p-4 rounded-[14px] border-[2.5px] border-cream-200 leading-relaxed">
                                 {content || "Nenhum conteúdo gerado ainda."}
                             </pre>
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 border-t border-cream-200 bg-cream-50 flex justify-end gap-2 flex-wrap">
-                            <Button variant="outline" onClick={onClose} className="border-scout-200 text-scout-700 hover:bg-scout-50">
+                        <div className="px-7 py-4 border-t-2 border-cream-200 bg-cream-50 flex justify-end gap-2 flex-wrap">
+                            <Button variant="outline" onClick={onClose}>
                                 Fechar
                             </Button>
                             <Button
                                 variant="outline"
                                 onClick={() => handleDownload("pdf")}
-                                disabled={isDownloadingPdf || !data}
-                                className="border-azure-300 text-azure-700 hover:bg-azure-50"
+                                disabled={isDownloadingPdf || downloadDisabled}
+                                className="text-azure-600 border-azure-500"
                             >
                                 {isDownloadingPdf ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileDown className="w-4 h-4 mr-2" />}
-                                Baixar .PDF
+                                .PDF
                             </Button>
-                            <Button variant="scout" onClick={() => handleDownload("docx")} disabled={isDownloadingDocx || !data}>
+                            <Button variant="gold" onClick={() => handleDownload("docx")} disabled={isDownloadingDocx || downloadDisabled}>
                                 {isDownloadingDocx ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-                                Baixar .DOCX
+                                .DOCX
                             </Button>
                         </div>
                     </motion.div>

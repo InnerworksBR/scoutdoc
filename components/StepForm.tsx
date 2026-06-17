@@ -5,11 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 // Schema Definitions
@@ -92,67 +91,55 @@ export default function StepForm({ onComplete }: StepFormProps) {
     };
 
     const variants = {
-        enter: (direction: number) => ({
-            x: direction > 0 ? 50 : -50,
-            opacity: 0,
-        }),
-        center: {
-            x: 0,
-            opacity: 1,
-        },
-        exit: (direction: number) => ({
-            x: direction < 0 ? 50 : -50,
-            opacity: 0,
-        }),
+        enter: (direction: number) => ({ x: direction > 0 ? 50 : -50, opacity: 0 }),
+        center: { x: 0, opacity: 1 },
+        exit: (direction: number) => ({ x: direction < 0 ? 50 : -50, opacity: 0 }),
     };
 
-    const selectClass = "w-full h-10 px-3 py-2 rounded-md border border-cream-300 bg-cream-50 text-sm focus:outline-none focus:ring-2 focus:ring-scout-500 focus:border-transparent appearance-none";
-    const textareaClass = "w-full px-3 py-2 rounded-md border border-cream-300 bg-cream-50 text-sm focus:outline-none focus:ring-2 focus:ring-scout-500 focus:border-transparent resize-none";
+    const selectClass = "w-full h-12 px-3.5 rounded-[13px] border-[2.5px] border-cream-300 bg-cream-50 text-sm font-medium text-scout-800 focus:outline-none focus:border-azure-500 appearance-none";
+    const textareaClass = "w-full px-3.5 py-3 rounded-[13px] border-[2.5px] border-cream-300 bg-cream-50 text-sm font-medium text-scout-800 focus:outline-none focus:border-azure-500 resize-none";
+    const errClass = "text-red-600 text-xs font-medium";
 
     return (
-        <div className="w-full max-w-xl mx-auto">
-            {/* Progress Indicator */}
-            <div className="mb-8 relative flex justify-between px-4">
-                <div className="absolute top-1/2 left-4 right-4 h-1 bg-cream-300 -z-10 rounded-full" />
-                <motion.div
-                    className="absolute top-1/2 left-4 h-1 bg-scout-gradient -z-10 rounded-full origin-left"
-                    initial={{ width: "0%" }}
-                    animate={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
-                    transition={{ duration: 0.5, ease: "easeInOut" }}
-                />
-
-                {STEPS.map((step, index) => (
-                    <div key={step.id} className="flex flex-col items-center">
-                        <motion.div
-                            initial={false}
-                            animate={{
-                                backgroundColor: index <= currentStep ? "var(--color-scout-600)" : "var(--color-cream-100)",
-                                color: index <= currentStep ? "white" : "var(--color-scout-300)",
-                                scale: index === currentStep ? 1.2 : 1,
-                            }}
-                            transition={{ duration: 0.3 }}
-                            className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-colors",
-                                index <= currentStep ? "border-scout-600" : "border-cream-300"
-                            )}
-                        >
-                            {index < currentStep ? <CheckCircle2 className="w-5 h-5" /> : step.id}
-                        </motion.div>
-                        <span className={cn(
-                            "mt-2 text-xs font-medium transition-colors duration-300 absolute -bottom-6 w-24 text-center",
-                            index === currentStep ? "text-scout-700" : "text-muted-foreground opacity-0"
-                        )}>
-                            {step.title}
-                        </span>
-                    </div>
-                ))}
+        <div className="w-full max-w-[580px] mx-auto">
+            {/* Wavy trail progress */}
+            <div className="w-full mb-7 relative">
+                <svg viewBox="0 0 580 60" preserveAspectRatio="none" className="absolute top-3 left-0 w-full h-10 pointer-events-none">
+                    <path d="M40,30 C160,2 200,58 290,30 S420,2 540,30" fill="none" stroke="#d7d3c2" strokeWidth="4" strokeLinecap="round" strokeDasharray="3 9" />
+                </svg>
+                <div className="relative flex justify-between px-1.5">
+                    {STEPS.map((step, index) => {
+                        const done = index < currentStep;
+                        const on = index <= currentStep;
+                        const current = index === currentStep;
+                        return (
+                            <div key={step.id} className="flex flex-col items-center gap-2 w-[100px]">
+                                <div className={cn(
+                                    "w-11 h-11 rounded-full border-[3px] border-ink flex items-center justify-center font-display font-semibold text-[17px]",
+                                    on ? "bg-scout-600 text-white" : "bg-white text-[#8aa39a]",
+                                    current && "shadow-[3px_3px_0_#16302b]"
+                                )}>
+                                    {done ? "✓" : step.id}
+                                </div>
+                                <span className={cn(
+                                    "font-display font-medium text-xs text-center",
+                                    current ? "text-scout-600" : "text-[#6a7a73]"
+                                )}>
+                                    {step.title}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
-            <Card className="min-h-[400px] flex flex-col relative overflow-hidden border-scout-100 shadow-xl bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                    <CardTitle>{STEPS[currentStep].title}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1">
+            {/* Form card */}
+            <div className="w-full bg-white border-[3px] border-ink rounded-[22px] shadow-[6px_7px_0_#16302b] overflow-hidden">
+                <div className="h-2 bg-gradient-to-r from-scout-600 via-azure-500 to-gold-500" />
+                <div className="px-7 pt-6 pb-2">
+                    <h2 className="font-display font-semibold text-[21px] text-ink">{STEPS[currentStep].title}</h2>
+                </div>
+                <div className="px-7 pb-6 min-h-[270px]">
                     <AnimatePresence custom={direction} mode="wait">
                         <motion.div
                             key={currentStep}
@@ -165,7 +152,7 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                 x: { type: "spring", stiffness: 300, damping: 30 },
                                 opacity: { duration: 0.2 },
                             }}
-                            className="space-y-4"
+                            className="space-y-[18px]"
                         >
                             {currentStep === 0 && (
                                 <>
@@ -177,11 +164,9 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                                 <option value="Escotista">Escotista</option>
                                                 <option value="Dirigente">Dirigente</option>
                                             </select>
-                                            <div className="absolute right-3 top-3 pointer-events-none">
-                                                <ArrowRight className="w-4 h-4 text-scout-400 rotate-90" />
-                                            </div>
+                                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8aa39a] pointer-events-none" />
                                         </div>
-                                        {errors.linha && <p className="text-red-500 text-xs">{errors.linha.message}</p>}
+                                        {errors.linha && <p className={errClass}>{errors.linha.message}</p>}
                                     </div>
 
                                     <div className="grid gap-2">
@@ -194,11 +179,9 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                                 <option value="Sênior">Sênior</option>
                                                 <option value="Pioneiro">Pioneiro</option>
                                             </select>
-                                            <div className="absolute right-3 top-3 pointer-events-none">
-                                                <ArrowRight className="w-4 h-4 text-scout-400 rotate-90" />
-                                            </div>
+                                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8aa39a] pointer-events-none" />
                                         </div>
-                                        {errors.ramo && <p className="text-red-500 text-xs">{errors.ramo.message}</p>}
+                                        {errors.ramo && <p className={errClass}>{errors.ramo.message}</p>}
                                     </div>
 
                                     <div className="grid gap-2">
@@ -210,11 +193,9 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                                 <option value="Básico">Básico</option>
                                                 <option value="Avançado">Avançado</option>
                                             </select>
-                                            <div className="absolute right-3 top-3 pointer-events-none">
-                                                <ArrowRight className="w-4 h-4 text-scout-400 rotate-90" />
-                                            </div>
+                                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8aa39a] pointer-events-none" />
                                         </div>
-                                        {errors.nivel && <p className="text-red-500 text-xs">{errors.nivel.message}</p>}
+                                        {errors.nivel && <p className={errClass}>{errors.nivel.message}</p>}
                                     </div>
                                 </>
                             )}
@@ -223,8 +204,8 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                 <>
                                     <div className="grid gap-2">
                                         <Label htmlFor="titulo">Título da Atividade</Label>
-                                        <Input id="titulo" placeholder="Ex: Pioneirismo..." {...register("titulo")} />
-                                        {errors.titulo && <p className="text-red-500 text-xs">{errors.titulo.message}</p>}
+                                        <Input id="titulo" placeholder="Ex: Pioneirismo: Nós e Amarras" {...register("titulo")} />
+                                        {errors.titulo && <p className={errClass}>{errors.titulo.message}</p>}
                                     </div>
 
                                     <div className="grid gap-2">
@@ -239,19 +220,19 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                     <div className="grid gap-2">
                                         <Label htmlFor="duracao">Duração Estimada</Label>
                                         <Input id="duracao" placeholder="Ex: 90 minutos" {...register("duracao")} />
-                                        {errors.duracao && <p className="text-red-500 text-xs">{errors.duracao.message}</p>}
+                                        {errors.duracao && <p className={errClass}>{errors.duracao.message}</p>}
                                     </div>
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="participantes">Número de Participantes</Label>
                                         <Input id="participantes" placeholder="Ex: 24 jovens" {...register("participantes")} />
-                                        {errors.participantes && <p className="text-red-500 text-xs">{errors.participantes.message}</p>}
+                                        {errors.participantes && <p className={errClass}>{errors.participantes.message}</p>}
                                     </div>
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="local">Local</Label>
-                                        <Input id="local" placeholder="Ex: Sede do Grupo (Ao ar livre)" {...register("local")} />
-                                        {errors.local && <p className="text-red-500 text-xs">{errors.local.message}</p>}
+                                        <Input id="local" placeholder="Ex: Sede do Grupo (ao ar livre)" {...register("local")} />
+                                        {errors.local && <p className={errClass}>{errors.local.message}</p>}
                                     </div>
                                 </>
                             )}
@@ -262,18 +243,18 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                         <Label htmlFor="contexto">Contexto de Aplicação</Label>
                                         <textarea
                                             id="contexto"
-                                            rows={3}
+                                            rows={2}
                                             className={textareaClass}
-                                            placeholder="Ex: UEL em zona urbana, patrulha em formação..."
+                                            placeholder="Ex: UEL urbana, patrulha em formação, jovens de 11 a 14 anos."
                                             {...register("contexto")}
                                         />
-                                        {errors.contexto && <p className="text-red-500 text-xs">{errors.contexto.message}</p>}
+                                        {errors.contexto && <p className={errClass}>{errors.contexto.message}</p>}
                                     </div>
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="enfase">Ênfase Educativa</Label>
-                                        <Input id="enfase" placeholder="Ex: Trabalho em Equipe, Liderança..." {...register("enfase")} />
-                                        {errors.enfase && <p className="text-red-500 text-xs">{errors.enfase.message}</p>}
+                                        <Input id="enfase" placeholder="Ex: Trabalho em equipe e liderança" {...register("enfase")} />
+                                        {errors.enfase && <p className={errClass}>{errors.enfase.message}</p>}
                                     </div>
 
                                     <div className="grid gap-2">
@@ -282,10 +263,10 @@ export default function StepForm({ onComplete }: StepFormProps) {
                                             id="desafios"
                                             rows={2}
                                             className={textareaClass}
-                                            placeholder="Ex: Jovens dispersos, falta de materiais..."
+                                            placeholder="Ex: Jovens dispersos, poucos materiais."
                                             {...register("desafios")}
                                         />
-                                        {errors.desafios && <p className="text-red-500 text-xs">{errors.desafios.message}</p>}
+                                        {errors.desafios && <p className={errClass}>{errors.desafios.message}</p>}
                                     </div>
 
                                     <div className="grid gap-2">
@@ -296,22 +277,21 @@ export default function StepForm({ onComplete }: StepFormProps) {
                             )}
                         </motion.div>
                     </AnimatePresence>
-                </CardContent>
-                <CardFooter className="flex justify-between border-t border-cream-100 bg-cream-50/50 p-6">
-                    <Button
-                        variant="ghost"
+                </div>
+                <div className="flex justify-between items-center px-7 py-4 border-t-2 border-cream-200 bg-cream-50">
+                    <button
+                        type="button"
                         onClick={prevStep}
                         disabled={currentStep === 0}
-                        className="pl-2 text-scout-700 hover:text-scout-900"
+                        className="font-display font-semibold text-[15px] text-[#45564f] disabled:opacity-30 transition-opacity"
                     >
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                        ← Voltar
+                    </button>
+                    <Button onClick={nextStep} variant="scout">
+                        {currentStep === STEPS.length - 1 ? "Gerar PUD" : "Próximo"} →
                     </Button>
-                    <Button onClick={nextStep} variant="scout" className="pr-2 group">
-                        {currentStep === STEPS.length - 1 ? "Gerar PUD" : "Próximo"}
-                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                </CardFooter>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }

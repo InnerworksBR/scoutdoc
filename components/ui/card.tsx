@@ -9,8 +9,8 @@ const Card = React.forwardRef<
     <div
         ref={ref}
         className={cn(
-            "rounded-lg border bg-card text-card-foreground shadow-sm",
-            "bg-white border-cream-300 shadow-md hover:border-scout-200 transition-colors",
+            // ScoutDoc 2026 — cartão "sticker": borda tinta grossa + sombra hard-offset
+            "rounded-[20px] border-[2.5px] border-ink bg-white text-card-foreground shadow-[5px_5px_0_#16302b]",
             className
         )}
         {...props}
